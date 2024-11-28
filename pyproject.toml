@@ -1,0 +1,8 @@
+[project]
+name = "advanced-database-project"
+version = "1.0.0"
+description = "advanced-database-project"
+
+[build-system]
+build-backend = "flit_core.buildapi"
+requires = ["flit_core >=3.2,<4"]
