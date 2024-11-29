@@ -6,8 +6,9 @@ class BasePage(tk.Frame):
     
     Creates all the content that is the same on every page.
     """
-    def __init__(self, pages):
+    def __init__(self, pages, db):
         self.pages = pages
+        self.db = db
         super().__init__()
         
         # Create navigation bar

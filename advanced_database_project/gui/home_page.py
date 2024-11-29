@@ -7,9 +7,11 @@ class HomePage(BasePage):
     GUI Home Page - displayed when the application is first opened.
     """
     
-    def __init__(self, pages):
-        super().__init__(pages)
+    def __init__(self, pages, db):
+        super().__init__(pages, db)
         self.configure(bg="#f7f7f7")
+        
+        self.top_products = self.db.selectBestSellingProducts()
 
         self.create_welcome()
         self.create_featured_products()
@@ -74,17 +76,7 @@ class HomePage(BasePage):
         featured_frame = tk.Frame(content, bg="#f7f7f7")
         featured_frame.pack(fill="both")
 
-        products = [
-            {"name": "GPU", "price": "$1499.99"},
-            {"name": "Laptop", "price": "$2199.49"},
-            {"name": "Mouse", "price": "$50.99"},
-            {"name": "Keyboard", "price": "$12.99"},
-            {"name": "Monitor", "price": "$112.99"},
-            {"name": "Phone", "price": "$212.99"},
-
-        ]
-        
-        for i, product in enumerate(products):
+        for i, product in enumerate(self.top_products):
             self.create_product_card(featured_frame, product, row=1, col=i + 1)  # Offset columns for centering
 
         return content
@@ -105,9 +97,9 @@ class HomePage(BasePage):
         product_image.pack()
 
         # Product Name
-        product_name = tk.Label(product_frame, text=product["name"], font=("Arial", 14, "bold"), bg="#fff", fg="#333", width=13)
+        product_name = tk.Label(product_frame, text=product[1], font=("Arial", 14, "bold"), bg="#fff", fg="#333", width=13)
         product_name.pack(pady=(10, 5))
 
         # Product Price
-        product_price = tk.Label(product_frame, text=product["price"], font=("Arial", 12), bg="#fff", fg="#007bff")
+        product_price = tk.Label(product_frame, text=f"${product[2]:.2f}", font=("Arial", 12), bg="#fff", fg="#007bff")
         product_price.pack()
