@@ -16,10 +16,6 @@ class HomePage(BasePage):
         self.create_welcome()
         self.create_featured_products()
 
-    def navigate_to(self, page):
-        self.pack_forget()
-        page.pack()
-        
     def create_welcome(self):
         """
         Create a Welcome Message with a Shop Now button
@@ -35,7 +31,7 @@ class HomePage(BasePage):
             text="Welcome to the Online Hardware Store!",
             font=("Arial", 24, "bold"),
             bg="#e6e6e6",
-            fg="#333",
+            fg="#333"
         )
         welcome_label.pack(pady=(30, 10))
         

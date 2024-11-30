@@ -6,16 +6,19 @@ class BasePage(tk.Frame):
     
     Creates all the content that is the same on every page.
     """
-    def __init__(self, pages, db):
+    def __init__(self, pages, db, create_base: bool = True):
         self.pages = pages
         self.db = db
+        self.user = None
+        
         super().__init__()
         
-        # Create navigation bar
-        self.create_navbar()
+        if create_base:
+            # Create navigation bar
+            self.create_navbar()
 
-        # Create footer
-        self.create_footer()
+            # Create footer
+            self.create_footer()
 
     def navigate_to(self, page):
         self.pack_forget()
@@ -29,7 +32,7 @@ class BasePage(tk.Frame):
         navbar.grid(row=0, column=0, sticky="nsew")
 
         # Navigation buttons
-        buttons = ["Home", "Products", "Cart", "About Us", "Contact"]
+        buttons = ["Home", "Products", "Cart", "Account", "Contact"]
         for button_text in buttons:
             button = tk.Button(
                 navbar,
