@@ -58,6 +58,7 @@ class SqlWrapper:
         except sqlite3.Error as e:
             self.db.rollback()
             print("Database Error!")
+            return e
         if commit:
             self.db.commit()
  

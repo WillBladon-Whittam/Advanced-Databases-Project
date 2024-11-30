@@ -3,6 +3,7 @@ import tkinter as tk
 from advanced_database_project.gui.home_page import HomePage
 from advanced_database_project.gui.products_page import ProductsPage
 from advanced_database_project.gui.login_page import LoginPage
+from advanced_database_project.gui.register_page import RegisterPage
 from advanced_database_project.backend.db_connection import DatabaseConnection
 
 
@@ -21,7 +22,8 @@ class App(tk.Tk):
           
         # Create each page - store them in a Dictionary
         self.pages = {}
-        self.pages["Login"] = LoginPage(self.pages, self.db) 
+        self.pages["Login"] = LoginPage(self.pages, self.db)
+        self.pages["Register"] = RegisterPage(self.pages, self.db) 
         self.pages["Home"] = HomePage(self.pages, self.db)
         self.pages["Products"] = ProductsPage(self.pages, self.db)
         # Shopping Cart Page

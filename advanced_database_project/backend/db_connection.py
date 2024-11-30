@@ -122,6 +122,18 @@ class DatabaseConnection():
                                      LIMIT 6;
                                      """)
         
+    def insertCustomer(self, firstname: str, 
+                       surname: str, 
+                       gender: Literal["Male", "Female"], 
+                       email: str, 
+                       username: str, 
+                       password: str):
+        return self.sql.update_table("""
+                                     INSERT INTO Customers (Customer_Firstname, Customer_Surname, Customer_Gender, Customer_Email, Customer_Username, Customer_Password) 
+                                     VALUES (?, ?, ?, ?, ?, ?)
+                                     """, sql_parameters=(firstname, surname, gender, email, username, hashlib.sha256(password.encode()).digest()))
+        
+    
 if __name__ == "__main__":
     connection = DatabaseConnection()
     products = connection.selectProducts()

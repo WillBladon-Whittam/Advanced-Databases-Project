@@ -62,7 +62,7 @@ class LoginPage(BasePage):
             login_frame, text="Dont have an account?", font=("Arial", 12), bg="#f7f7f7")
         register_label.grid(row=3, column=0, pady=(10, 0))
         
-        register_button = tk.Button(login_frame, font=("Arial", 12, "underline"), width=8, text="Register", bg="#f7f7f7", borderwidth=0)
+        register_button = tk.Button(login_frame, font=("Arial", 12, "underline"), width=8, text="Register", bg="#f7f7f7", borderwidth=0, command=self.register)
         register_button.grid(row=3, column=1, pady=(10, 0))
         
     def validate_login(self):
@@ -74,3 +74,6 @@ class LoginPage(BasePage):
         else:
             self.user = user
             self.navigate_to(self.pages["Home"])
+            
+    def register(self):
+        self.navigate_to(self.pages["Register"])
