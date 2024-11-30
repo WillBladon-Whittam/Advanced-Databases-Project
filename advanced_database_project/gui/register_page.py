@@ -104,51 +104,47 @@ class RegisterPage(BasePage):
         register_button = tk.Button(register_frame, font=("Arial", 12), width=8, text="Register", command=self.register)
         register_button.grid(row=7, column=1, pady=(10, 0))
         
+    @staticmethod
+    def validate_field(value, entry_widget):
+        """
+        Validates a field and updates its Entry based on whether it is filled.
+
+        Args:
+            value (_type_): The valeu to check taht isn't empty
+            entry_widget (_type_): The tkitner widget that needs updating
+
+        """        
+        if not value:
+            entry_widget.config(highlightbackground="red", highlightcolor="red", highlightthickness=1)
+            return False
+        else:
+            entry_widget.config(highlightthickness=0)
+            return True
+
     def register(self):
         """
         Register a new customer.
         - Username needs to be unique
         - Passwords need to match
         - All fields need to be filled in.
-        """  
+        """
         error = False
-              
-        if not self.first_name.get():
-            self.first_name_entry.config(highlightbackground="red", highlightcolor="red", highlightthickness=1)
-            error = True
-        else:
-            self.first_name_entry.config(highlightthickness=0)
-            
-        if not self.last_name.get():
-            self.last_name_entry.config(highlightbackground="red", highlightcolor="red", highlightthickness=1)
-            error = True
-        else:
-            self.last_name_entry.config(highlightthickness=0)
-            
-        if not self.email.get():
-            self.email_entry.config(highlightbackground="red", highlightcolor="red", highlightthickness=1)
-            error = True
-        else:
-            self.email_entry.config(highlightthickness=0)
-            
-        if not self.username.get():
-            self.username_entry.config(highlightbackground="red", highlightcolor="red", highlightthickness=1)
-            error = True
-        else:
-            self.username_entry.config(highlightthickness=0)
-            
-        if not self.password.get():
-            self.password_entry.config(highlightbackground="red", highlightcolor="red", highlightthickness=1)
-            error = True
-        else:
-            self.password_entry.config(highlightthickness=0)
-            
-        if not self.password_confirm.get():
-            self.confirm_password_entry.config(highlightbackground="red", highlightcolor="red", highlightthickness=1)
-            error = True
-        else:
-            self.confirm_password_entry.config(highlightthickness=0)
-            
+
+        # Validate required fields
+        field_entries = [
+            (self.first_name.get(), self.first_name_entry),
+            (self.last_name.get(), self.last_name_entry),
+            (self.email.get(), self.email_entry),
+            (self.username.get(), self.username_entry),
+            (self.password.get(), self.password_entry),
+            (self.password_confirm.get(), self.confirm_password_entry),
+        ]
+
+        for value, entry in field_entries:
+            if not self.validate_field(value, entry):
+                error = True
+
+        # Check if passwords match
         if self.password.get() and self.password_confirm.get():
             if self.password.get() != self.password_confirm.get():
                 self.password_entry.config(highlightbackground="red", highlightcolor="red", highlightthickness=1)
@@ -159,9 +155,18 @@ class RegisterPage(BasePage):
                 self.error_label.configure(text="")
                 self.password_entry.config(highlightthickness=0)
                 self.confirm_password_entry.config(highlightthickness=0)
-        
+
+        # Handle registration logic if no errors
         if not error:
-            result = self.db.insertCustomer(self.first_name.get(), self.last_name.get(), self.gender.get(), self.email.get(), self.username.get(), self.password.get())
+            result = self.db.insertCustomer(
+                self.first_name.get(),
+                self.last_name.get(),
+                self.gender.get(),
+                self.email.get(),
+                self.username.get(),
+                self.password.get()
+            )
+
             if isinstance(result, sqlite3.IntegrityError):
                 self.error_label.configure(text="Username is already taken!")
                 self.username_entry.config(highlightbackground="red", highlightcolor="red", highlightthickness=1)
