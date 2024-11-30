@@ -14,8 +14,8 @@ class ProductsPage(BasePage):
     ALlows sorting of products by name, price.
     """
 
-    def __init__(self, pages, db):
-        super().__init__(pages, db)
+    def __init__(self, pages, db, user):
+        super().__init__(pages, db, user)
         self.configure(bg="#f7f7f7")
 
         self.products = self.db.selectProducts()

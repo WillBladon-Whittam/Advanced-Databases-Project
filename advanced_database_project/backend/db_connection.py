@@ -133,6 +133,24 @@ class DatabaseConnection():
                                      VALUES (?, ?, ?, ?, ?, ?)
                                      """, sql_parameters=(firstname, surname, gender, email, username, hashlib.sha256(password.encode()).digest()))
         
+    def updateCustomer(self, current_username: str,
+                       firstname: str, 
+                       surname: str, 
+                       gender: Literal["Male", "Female"], 
+                       email: str, 
+                       new_username: str, 
+                       password: str):
+        return self.sql.update_table("""
+                                     UPDATE Customers
+                                     SET Customer_Firstname = ?,
+                                         Customer_Surname = ?,
+                                         Customer_Gender = ?,
+                                         Customer_Email = ?,
+                                         Customer_Username = ?,
+                                         Customer_Password = ?
+                                     WHERE Customer_Username = ?
+                                     """, sql_parameters=(firstname, surname, gender, email, new_username, hashlib.sha256(password.encode()).digest(), current_username))
+        
     
 if __name__ == "__main__":
     connection = DatabaseConnection()

@@ -9,8 +9,8 @@ class LoginPage(BasePage):
     GUI Home Page - displayed when the application is first opened.
     """
     
-    def __init__(self, pages, db):
-        super().__init__(pages, db, create_base=False)
+    def __init__(self, pages, db, user):
+        super().__init__(pages, db, user, create_base=False)
         self.configure(bg="#f7f7f7")
         
         self.username = tk.StringVar()
@@ -72,7 +72,12 @@ class LoginPage(BasePage):
         elif user is False:
             self.error_label.configure(text="Invalid Password")
         else:
-            self.user = user
+            self.user["Firstname"] = user[1]
+            self.user["Surname"] = user[2]
+            self.user["Gender"] = user[3]
+            self.user["Email"] = user[4]
+            self.user["Username"] = user[5]
+            self.user["Password"] = user[6]
             self.navigate_to(self.pages["Home"])
             
     def register(self):

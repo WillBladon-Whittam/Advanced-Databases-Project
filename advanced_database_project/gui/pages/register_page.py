@@ -9,8 +9,8 @@ class RegisterPage(BasePage):
     GUI Register Page - displayed when a user creates an account
     """
     
-    def __init__(self, pages, db):
-        super().__init__(pages, db, create_base=False)
+    def __init__(self, pages, db, user):
+        super().__init__(pages, db, user, create_base=False)
         self.configure(bg="#f7f7f7")
         
         self.first_name = tk.StringVar()
@@ -173,4 +173,10 @@ class RegisterPage(BasePage):
             elif isinstance(result, sqlite3.Error):
                 self.error_label.configure(text="Database Error!")
             else:
+                self.user["Firstname"] = self.first_name.get()
+                self.user["Surname"] = self.last_name.get()
+                self.user["Gender"] = self.gender.get()
+                self.user["Email"] = self.email.get()
+                self.user["Username"] = self.username.get()
+                self.user["Password"] = self.password.get()
                 self.navigate_to(self.pages["Home"])

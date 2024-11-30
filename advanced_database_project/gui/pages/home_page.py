@@ -7,8 +7,8 @@ class HomePage(BasePage):
     GUI Home Page - displayed when the application is first opened.
     """
     
-    def __init__(self, pages, db):
-        super().__init__(pages, db)
+    def __init__(self, pages, db, user):
+        super().__init__(pages, db, user)
         self.configure(bg="#f7f7f7")
         
         self.top_products = self.db.selectBestSellingProducts()
