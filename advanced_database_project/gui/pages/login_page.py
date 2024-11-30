@@ -18,6 +18,13 @@ class LoginPage(BasePage):
         self.error = None
         
         self.create_login()
+        
+    def navigate_to(self, page):
+        self.username.set("")
+        self.password.set("")
+    
+        self.pack_forget()
+        page.show()
 
     def create_login(self):
         welcome_frame = tk.Frame(self, bg="#f7f7f7")
@@ -42,15 +49,15 @@ class LoginPage(BasePage):
             login_frame, text="Username:", font=("Arial", 12), bg="#f7f7f7")
         username_label.grid(row=0, column=0, pady=5)
         
-        username_entry = tk.Entry(login_frame, textvariable=self.username, font=("Arial", 12))
-        username_entry.grid(row=0, column=1, padx=(0, 20), pady=5)
+        self.username_entry = tk.Entry(login_frame, textvariable=self.username, font=("Arial", 12))
+        self.username_entry.grid(row=0, column=1, padx=(0, 20), pady=5)
         
         password_label = tk.Label(
             login_frame, text="Password:", font=("Arial", 12), bg="#f7f7f7")
         password_label.grid(row=1, column=0, pady=5)
         
-        password_entry = tk.Entry(login_frame, textvariable=self.password, font=("Arial", 12), show="*")
-        password_entry.grid(row=1, column=1, padx=(0, 20), pady=5)
+        self.password_entry = tk.Entry(login_frame, textvariable=self.password, font=("Arial", 12), show="*")
+        self.password_entry.grid(row=1, column=1, padx=(0, 20), pady=5)
         
         self.error_label = tk.Label(login_frame, text="", font=("Arial", 12), bg="#f7f7f7", fg="#ff0000")
         self.error_label.grid(row=2, column=0, pady=(10, 0))
