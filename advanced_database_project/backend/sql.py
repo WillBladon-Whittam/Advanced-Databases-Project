@@ -1,4 +1,5 @@
 import sqlite3
+from pathlib import Path
 from typing import Literal, Tuple
 
 
@@ -18,6 +19,20 @@ class SqlWrapper:
     def execute(self, sql_query: str, sql_parameters: Tuple[str, int] = tuple()) -> None:
         self.cursor.execute(sql_query, sql_parameters)
         
+    def run_sql_script(self, sql_file_path: Path):
+        """
+        Run an .sql query script
+
+        Args:
+            sql_file_path (Path): The file path to the sql script
+        """
+        with open(sql_file_path, 'r') as file:
+            sql_script = file.read()
+            
+        
+        self.cursor.executescript(sql_script)
+        self.db.commit()
+
     def select_query(self, sql_query, sql_parameters: Tuple[str, int] = tuple(), fetch: Literal['all', 'many', 'one'] = "all", num_fetch: int = 1):
         """
         Creates a SELECT query

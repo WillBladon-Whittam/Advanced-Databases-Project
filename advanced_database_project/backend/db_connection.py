@@ -1,6 +1,7 @@
 from advanced_database_project.backend.sql import SqlWrapper
 
 import hashlib
+from pathlib import Path
 from typing import Tuple, Literal, List
 
 
@@ -10,6 +11,22 @@ class DatabaseConnection():
     """
     def __init__(self, db: str = r".\database.db") -> None:
         self.sql = SqlWrapper(db)
+        
+    def insert_image(self, image_path: Path):
+        """
+        Insert an Image into the products table.
+        This takes the images stored in the assets file, and adds the BLOB data to the database.
+        Storing binary hex for the images in the .sql script file is too large.
+
+        Args:
+            image_path (Path): _description_
+        """
+        
+        with open(image_path, 'rb') as img_file:
+            binary_data = img_file.read()
+
+        self.sql.update_table("UPDATE Products SET Product_Image = ? WHERE Product_Name = ?",
+                              sql_parameters=(binary_data, image_path.stem))
         
     def getCustomerByLogin(self, username: str, password: str) -> Tuple | False | None:
         """
