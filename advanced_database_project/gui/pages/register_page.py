@@ -33,6 +33,22 @@ class RegisterPage(BasePage):
         self.error_label = None
         
         self.create_register()
+        
+    def navigate_to(self, page):
+        """
+        Overide the default naviage_to function from BasePage - Reset the all Entry boxes after the page has changed.
+        """
+        self.first_name.set("")
+        self.last_name.set("")
+        self.gender.set("Male")
+        self.email.set("")
+        self.username.set("")
+        self.password.set("")
+        self.password_confirm.set("")
+        self.error_label.configure(text="")
+    
+        self.pack_forget()
+        page.show()
 
     def create_register(self):
         """
@@ -117,6 +133,9 @@ class RegisterPage(BasePage):
         register_button = tk.Button(register_frame, font=("Arial", 12), width=8, text="Register", command=self.register)
         register_button.grid(row=7, column=1, pady=(10, 0))
         
+        go_back_button = tk.Button(register_frame, font=("Arial", 12), width=8, text="Back", command=self.return_to_login)
+        go_back_button.grid(row=7, column=2, pady=(10, 0))
+        
     @staticmethod
     def validate_field(value: str, entry_widget: tk.Entry):
         """
@@ -132,6 +151,12 @@ class RegisterPage(BasePage):
         else:
             entry_widget.config(highlightthickness=0)
             return True
+        
+    def return_to_login(self):
+        """
+        Return back to the Login Page
+        """
+        self.navigate_to(self.pages["Login"])
 
     def register(self):
         """

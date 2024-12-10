@@ -110,5 +110,5 @@ class HomePage(BasePage):
         product_name = tk.Label(product_frame, text=product[1], font=("Arial", 14, "bold"), bg="#fff", fg="#333", width=13)
         product_name.pack(pady=(10, 5))
 
-        product_price = tk.Label(product_frame, text=f"${product[2]:.2f}", font=("Arial", 12), bg="#fff", fg="#007bff")
+        product_price = tk.Label(product_frame, text=f"${product[3]:.2f}", font=("Arial", 12), bg="#fff", fg="#007bff")
         product_price.pack()
