@@ -14,6 +14,7 @@ class AccountPage(BasePage):
         super().__init__(pages, db, user)
         self.configure(bg="#f7f7f7")
         
+        # Initialise account information variables
         self.first_name = tk.StringVar()
         self.last_name = tk.StringVar()
         self.gender = tk.StringVar()
@@ -21,11 +22,25 @@ class AccountPage(BasePage):
         self.username = tk.StringVar()
         self.password = tk.StringVar()
         self.password_confirm = tk.StringVar()
+        
+        # Initialise Tkitner widgets attributes
+        self.first_name_entry = None
+        self.last_name_entry = None
+        self.male_button = None
+        self.female_button = None
+        self.email_entry = None
+        self.username_entry = None
+        self.password_entry = None
+        self.confirm_password_entry = None
         self.error_label = None
         
         self.create_account_page()
         
     def show(self):
+        """
+        Overide the default show function from BasePage - set the Entry boxs to the users information.
+        This can't be done when the Entry boxs are created as the user hasn't logged in yet, and the user can change.
+        """
         self.first_name.set(self.user["Firstname"])
         self.last_name.set(self.user["Surname"])
         self.gender.set(self.user["Gender"])
@@ -34,6 +49,9 @@ class AccountPage(BasePage):
         self.pack()
 
     def create_account_page(self):
+        """
+        Create the widgets for the accounts page.
+        """
         header_frame = tk.Frame(self, bg="#f7f7f7")
         header_frame.grid(row=1, column=0, sticky="nsew") 
         
@@ -117,15 +135,14 @@ class AccountPage(BasePage):
         logout_button.grid(row=7, column=2, pady=(10, 0))
         
     @staticmethod
-    def validate_field(value, entry_widget):
+    def validate_field(value: str, entry_widget: tk.Entry):
         """
         Validates a field and updates its Entry based on whether it is filled.
 
         Args:
-            value (_type_): The valeu to check taht isn't empty
-            entry_widget (_type_): The tkitner widget that needs updating
-
-        """        
+            value (str): The value to check taht isn't empty
+            entry_widget (tk.Entry): The tkitner widget that needs updating
+        """
         if not value:
             entry_widget.config(highlightbackground="red", highlightcolor="red", highlightthickness=1)
             return False
@@ -198,6 +215,9 @@ class AccountPage(BasePage):
                 self.user["Password"] = hashlib.sha256(self.password.get().encode()).digest()
 
     def logout(self):
+        """
+        Logout - resets the user information, and return to the login page
+        """
         self.user["Firstname"] = ""
         self.user["Surname"] = ""
         self.user["Gender"] = ""

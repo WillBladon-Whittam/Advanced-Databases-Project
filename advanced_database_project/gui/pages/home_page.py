@@ -1,4 +1,9 @@
 import tkinter as tk
+from typing import List, Dict
+from PIL import ImageTk, Image
+import io
+
+from advanced_database_project.backend.db_connection import DatabaseConnection
 from advanced_database_project.gui.base_page import BasePage
 
 
@@ -7,7 +12,7 @@ class HomePage(BasePage):
     GUI Home Page - displayed when the application is first opened.
     """
     
-    def __init__(self, pages, db, user):
+    def __init__(self, pages: List[tk.Frame], db: DatabaseConnection, user: Dict[str, str]):
         super().__init__(pages, db, user)
         self.configure(bg="#f7f7f7")
         
@@ -23,7 +28,6 @@ class HomePage(BasePage):
         content = tk.Frame(self, bg="#f7f7f7")
         content.grid(row=1, column=0, sticky="nsew") 
         
-        # Welcome message
         welcome = tk.Frame(content, bg="#e6e6e6", pady=20)
         welcome.pack(fill="x")
         welcome_label = tk.Label(
@@ -35,7 +39,6 @@ class HomePage(BasePage):
         )
         welcome_label.pack(pady=(30, 10))
         
-        # Shop Now button
         shop_now_button = tk.Button(
             welcome,
             text="Shop Now",
@@ -59,7 +62,6 @@ class HomePage(BasePage):
         content = tk.Frame(self, bg="#f7f7f7")
         content.grid(row=2, column=0, sticky="nsew") 
 
-        # Featured products
         featured_label = tk.Label(
             content,
             text="Top Selling Products",
@@ -73,7 +75,7 @@ class HomePage(BasePage):
         featured_frame.pack(fill="both")
 
         for i, product in enumerate(self.top_products):
-            self.create_product_card(featured_frame, product, row=1, col=i + 1)  # Offset columns for centering
+            self.create_product_card(featured_frame, product, row=1, col=i + 1)
 
         return content
 
@@ -87,15 +89,26 @@ class HomePage(BasePage):
         )
         product_frame.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
 
-        # Placeholder for product image
-        product_image = tk.Canvas(product_frame, width=100, height=100)
-        product_image.create_text(50, 50, text="Image", fill="#777", font=("Arial", 10))
-        product_image.pack()
+        if product[6] is not None:
+            image = Image.open(io.BytesIO(product[6]))
 
-        # Product Name
+            image.thumbnail((100, 100), Image.LANCZOS)
+
+            ph = ImageTk.PhotoImage(image)
+
+            product_image = tk.Canvas(
+                product_frame, width=100, height=100, bg="#fff", bd=0, highlightthickness=0)
+
+            x_offset = (100 - image.width) // 2
+            y_offset = (100 - image.height) // 2
+
+            product_image.create_image(x_offset, y_offset, anchor="nw", image=ph)
+
+            product_image.image = ph
+            product_image.pack()
+
         product_name = tk.Label(product_frame, text=product[1], font=("Arial", 14, "bold"), bg="#fff", fg="#333", width=13)
         product_name.pack(pady=(10, 5))
 
-        # Product Price
         product_price = tk.Label(product_frame, text=f"${product[2]:.2f}", font=("Arial", 12), bg="#fff", fg="#007bff")
         product_price.pack()

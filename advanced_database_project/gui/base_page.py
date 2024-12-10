@@ -1,4 +1,9 @@
+from advanced_database_project.backend.db_connection import DatabaseConnection
+
 import tkinter as tk
+from typing import List, Dict
+from PIL import ImageTk, Image
+import io
 
 class BasePage(tk.Frame):
     """
@@ -6,7 +11,7 @@ class BasePage(tk.Frame):
     
     Creates all the content that is the same on every page.
     """
-    def __init__(self, pages, db, user, create_base: bool = True):
+    def __init__(self, pages: List[tk.Frame], db: DatabaseConnection, user: Dict[str, str], create_base: bool = True):
         self.pages = pages
         self.db = db
         self.user = user
@@ -14,10 +19,7 @@ class BasePage(tk.Frame):
         super().__init__()
         
         if create_base:
-            # Create navigation bar
             self.create_navbar()
-
-            # Create footer
             self.create_footer()
 
     def navigate_to(self, page):
@@ -34,7 +36,6 @@ class BasePage(tk.Frame):
         navbar = tk.Frame(self, bg="#333", height=50)
         navbar.grid(row=0, column=0, sticky="nsew")
 
-        # Navigation buttons
         buttons = ["Home", "Products", "Cart", "Account", "Contact"]
         for button_text in buttons:
             button = tk.Button(

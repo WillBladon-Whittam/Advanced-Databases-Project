@@ -1,15 +1,18 @@
 
 import tkinter as tk
-import hashlib
+from typing import List, Dict
+
+from advanced_database_project.backend.db_connection import DatabaseConnection
 from advanced_database_project.gui.base_page import BasePage
 
 
 class LoginPage(BasePage):
     """
-    GUI Home Page - displayed when the application is first opened.
+    GUI Login Page - displayed when the application is first opened.
+    Prompts the user to login with there credentials or register and create an account
     """
     
-    def __init__(self, pages, db, user):
+    def __init__(self, pages: List[tk.Frame], db: DatabaseConnection, user: Dict[str, str]):
         super().__init__(pages, db, user, create_base=False)
         self.configure(bg="#f7f7f7")
         
@@ -20,13 +23,20 @@ class LoginPage(BasePage):
         self.create_login()
         
     def navigate_to(self, page):
+        """
+        Overide the default naviage_to function from BasePage - Reset the username and password Entry boxes after the page has changed.
+        """
         self.username.set("")
         self.password.set("")
+        self.error_label.configure(text="")
     
         self.pack_forget()
         page.show()
 
     def create_login(self):
+        """
+        Create the widgets for the login page.
+        """
         welcome_frame = tk.Frame(self, bg="#f7f7f7")
         welcome_frame.grid(row=1, column=0, sticky="nsew") 
         
@@ -73,6 +83,11 @@ class LoginPage(BasePage):
         register_button.grid(row=3, column=1, pady=(10, 0))
         
     def validate_login(self):
+        """
+        Validate the information entered by the user.
+        Check the username and password match in the database.
+        Set the user information when the information is validated.
+        """
         user = self.db.getCustomerByLogin(self.username.get(), self.password.get())
         if user is None:
             self.error_label.configure(text="Invalid Username")
@@ -88,4 +103,7 @@ class LoginPage(BasePage):
             self.navigate_to(self.pages["Home"])
             
     def register(self):
+        """
+        Go to Register Page
+        """
         self.navigate_to(self.pages["Register"])

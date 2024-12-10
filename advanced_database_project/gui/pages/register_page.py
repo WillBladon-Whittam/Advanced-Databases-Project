@@ -13,6 +13,7 @@ class RegisterPage(BasePage):
         super().__init__(pages, db, user, create_base=False)
         self.configure(bg="#f7f7f7")
         
+        # Initialise product search information variables
         self.first_name = tk.StringVar()
         self.last_name = tk.StringVar()
         self.gender = tk.StringVar(value="Male")
@@ -22,9 +23,21 @@ class RegisterPage(BasePage):
         self.password_confirm = tk.StringVar()
         self.error_label = None
         
+        # Initialise Tkitner widgets attributes
+        self.first_name_entry = None
+        self.last_name_entry = None
+        self.email_entry = None
+        self.username_entry = None
+        self.password_entry = None
+        self.confirm_password_entry = None
+        self.error_label = None
+        
         self.create_register()
 
     def create_register(self):
+        """
+        Create the widgets for the register page.
+        """
         header_frame = tk.Frame(self, bg="#f7f7f7")
         header_frame.grid(row=1, column=0, sticky="nsew") 
         
@@ -105,15 +118,14 @@ class RegisterPage(BasePage):
         register_button.grid(row=7, column=1, pady=(10, 0))
         
     @staticmethod
-    def validate_field(value, entry_widget):
+    def validate_field(value: str, entry_widget: tk.Entry):
         """
         Validates a field and updates its Entry based on whether it is filled.
 
         Args:
-            value (_type_): The valeu to check taht isn't empty
-            entry_widget (_type_): The tkitner widget that needs updating
-
-        """        
+            value (str): The value to check taht isn't empty
+            entry_widget (tk.Entry): The tkitner widget that needs updating
+        """   
         if not value:
             entry_widget.config(highlightbackground="red", highlightcolor="red", highlightthickness=1)
             return False
@@ -130,7 +142,6 @@ class RegisterPage(BasePage):
         """
         error = False
 
-        # Validate required fields
         field_entries = [
             (self.first_name.get(), self.first_name_entry),
             (self.last_name.get(), self.last_name_entry),
@@ -156,7 +167,6 @@ class RegisterPage(BasePage):
                 self.password_entry.config(highlightthickness=0)
                 self.confirm_password_entry.config(highlightthickness=0)
 
-        # Handle registration logic if no errors
         if not error:
             result = self.db.insertCustomer(
                 self.first_name.get(),

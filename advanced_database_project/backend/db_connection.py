@@ -112,7 +112,11 @@ class DatabaseConnection():
                                      SELECT 
                                         Products.Product_ID,
                                         Products.Product_Name,
+                                        Products.Category_ID,
                                         Products.Price,
+                                        Products.Stock_Level,
+                                        Products.Supplier_ID,
+                                        Products.Product_Image,
                                      SUM(Orders.Order_Quantity) AS Total_Ordered
                                      FROM Orders
                                      JOIN Products ON Orders.Product_ID = Products.Product_ID
@@ -127,7 +131,23 @@ class DatabaseConnection():
                        gender: Literal["Male", "Female"], 
                        email: str, 
                        username: str, 
-                       password: str):
+                       password: str) -> None | Exception:
+        """
+        Create a new customer in the customer table.
+        Use SHA246 Hashing for the password.
+
+        Args:
+            firstname (str): The new users first name
+            surname (str): The new users last name
+            gender ("Male" or "Female"): The gender of the new user
+            email (str): The email of the new user
+            username (str): The username of the new user (This must be unique)
+            password (str): The password of the user. Passed as a string, the SHA256 hash is applied in the method.
+
+        Returns:
+            Exception: Returns the SQLite exception if there is an error.
+            None: Returns None of the insertion was successful
+        """        
         return self.sql.update_table("""
                                      INSERT INTO Customers (Customer_Firstname, Customer_Surname, Customer_Gender, Customer_Email, Customer_Username, Customer_Password) 
                                      VALUES (?, ?, ?, ?, ?, ?)
@@ -139,7 +159,24 @@ class DatabaseConnection():
                        gender: Literal["Male", "Female"], 
                        email: str, 
                        new_username: str, 
-                       password: str):
+                       password: str) -> None | Exception:
+        """
+        Update an existing customer in the customer table.
+        Use SHA246 Hashing for the password.
+
+        Args:
+            current_username (str): The current username of the user to be updated
+            firstname (str): The new users first name
+            surname (str): The new users last name
+            gender ("Male" or "Female"): The gender of the new user
+            email (str): The email of the new user
+            username (str): The new username of the new user (This must be unique)
+            password (str): The new password of the user. Passed as a string, the SHA256 hash is applied in the method.
+
+        Returns:
+            Exception: Returns the SQLite exception if there is an error.
+            None: Returns None of the insertion was successful
+        """
         return self.sql.update_table("""
                                      UPDATE Customers
                                      SET Customer_Firstname = ?,

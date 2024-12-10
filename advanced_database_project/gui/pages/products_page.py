@@ -1,7 +1,10 @@
 import tkinter as tk
-
 from tkinter import ttk
+from typing import List, Dict
+from PIL import ImageTk, Image
+import io
 
+from advanced_database_project.backend.db_connection import DatabaseConnection
 from advanced_database_project.gui.base_page import BasePage
 
 
@@ -14,7 +17,7 @@ class ProductsPage(BasePage):
     ALlows sorting of products by name, price.
     """
 
-    def __init__(self, pages, db, user):
+    def __init__(self, pages: List[tk.Frame], db: DatabaseConnection, user: Dict[str, str]):
         super().__init__(pages, db, user)
         self.configure(bg="#f7f7f7")
 
@@ -22,15 +25,20 @@ class ProductsPage(BasePage):
         self.categories = ["All Categories"] + [category[1]
                                                 for category in self.db.selectCategories()]
 
+        # Initialise product search information variables
         self.search_var = tk.StringVar()
         self.category_var = tk.StringVar()
         self.min_price_var = tk.DoubleVar(value=0)
         self.max_price_var = tk.DoubleVar(value=5000)
-
+        self.sort_criteria = tk.StringVar(value="Name")
+        self.sort_order = tk.StringVar(value="ASC")
+        
         self.create_widgets()
 
     def create_widgets(self):
-        # Product Listings Header
+        """
+        Create the widgets for the products page.
+        """
         header_frame = tk.Frame(self, bg="#f7f7f7")
         header_frame.grid(row=1, column=0)
 
@@ -38,7 +46,6 @@ class ProductsPage(BasePage):
                          font=("Arial", 24, "bold"), bg="#f7f7f7")
         title.pack(pady=5)
 
-        # Search bar, category dropdown, and price filter
         search_frame = tk.Frame(self, bg="#f7f7f7")
         search_frame.grid(row=2, column=0)
 
@@ -74,7 +81,6 @@ class ProductsPage(BasePage):
         max_price_entry.grid(row=2, column=6, padx=(0, 20), pady=5)
         self.max_price_var.trace_add('write', self.update_products)
 
-        # Sort section
         sort_frame = tk.Frame(search_frame, bg="#f7f7f7")
         sort_frame.grid(row=2, column=8, pady=5)
 
@@ -82,15 +88,10 @@ class ProductsPage(BasePage):
                               font=("Arial", 12), bg="#f7f7f7")
         sort_label.grid(row=2, column=0, padx=(0, 10))
 
-        # Sort by button (fixed size based on "Category")
-        self.sort_criteria = tk.StringVar(value="Name")
-        self.sort_order = tk.StringVar(value="ASC")
-
         sort_criteria_button = tk.Button(sort_frame, textvariable=self.sort_criteria, font=(
             "Arial", 12), command=self.toggle_sort_criteria, width=8)
         sort_criteria_button.grid(row=2, column=1, padx=(0, 10))
 
-        # ASC/DESC toggle button (fixed size based on "DESC")
         sort_order_button = tk.Button(
             sort_frame,
             textvariable=self.sort_order,
@@ -100,11 +101,9 @@ class ProductsPage(BasePage):
         )
         sort_order_button.grid(row=2, column=2)
 
-        # Scrollable area for product listings
         product_list_frame = tk.Frame(self, bg="#f7f7f7")
         product_list_frame.grid(row=3, column=0, sticky="nsew")
 
-        # Canvas and scrollbar
         canvas = tk.Canvas(product_list_frame, bg="#f7f7f7", height=500)
         canvas.grid(row=3, column=0, sticky="nsew")
 
@@ -112,21 +111,17 @@ class ProductsPage(BasePage):
             product_list_frame, orient="vertical", command=canvas.yview)
         canvas.configure(yscrollcommand=scrollbar.set)
 
-        # Frame inside the canvas for products
         self.products_frame = tk.Frame(canvas, bg="#f7f7f7")
         canvas.create_window((0, 0), window=self.products_frame, anchor="nw")
 
-        # Bind scrollwheel to the canvas
         canvas.bind_all("<MouseWheel>", lambda event: self.scroll_canvas(event, canvas))
 
-        # Display products
         self.display_products(self.products_frame)
 
         product_list_frame.grid_rowconfigure(0, weight=1)
         product_list_frame.grid_columnconfigure(0, weight=1)
 
-        canvas.bind("<Configure>",
-                    lambda event: self.update_scroll_region(event, canvas))
+        canvas.bind("<Configure>", lambda event: self.update_scroll_region(event, canvas))
 
     def scroll_canvas(self, event, canvas):
         """
@@ -147,26 +142,36 @@ class ProductsPage(BasePage):
         for widget in parent.winfo_children():
             widget.destroy()
 
-        for idx, product in enumerate(self.products):
+        for i, product in enumerate(self.products):
             product_frame = tk.Frame(
                 parent, bg="#fff", bd=1, relief="solid", padx=10, pady=10, width=200
             )
-            product_frame.grid(row=idx // 6, column=idx %
+            product_frame.grid(row=i // 6, column=i %
                                6, padx=10, pady=10, sticky="nsew")
 
             # Placeholder for product image
-            product_image = tk.Canvas(
-                product_frame, width=100, height=100, bg="#ccc", bd=0, highlightthickness=0)
-            product_image.create_text(
-                50, 50, text="Image", fill="#777", font=("Arial", 10))
-            product_image.pack()
+            if product[6] is not None:
+                image = Image.open(io.BytesIO(product[6]))
 
-            # Product Name
+                image.thumbnail((100, 100), Image.LANCZOS)
+
+                ph = ImageTk.PhotoImage(image)
+
+                product_image = tk.Canvas(
+                    product_frame, width=100, height=100, bg="#fff", bd=0, highlightthickness=0)
+
+                x_offset = (100 - image.width) // 2
+                y_offset = (100 - image.height) // 2
+
+                product_image.create_image(x_offset, y_offset, anchor="nw", image=ph)
+
+                product_image.image = ph
+                product_image.pack()
+                
             product_name = tk.Label(product_frame, text=product[1], font=(
                 "Arial", 14, "bold"), bg="#fff", fg="#333", width=13)
             product_name.pack(pady=(10, 5))
 
-            # Product Price
             product_price = tk.Label(product_frame, text=f"${product[3]:.2f}", font=(
                 "Arial", 12), bg="#fff", fg="#007bff")
             product_price.pack()
@@ -199,7 +204,9 @@ class ProductsPage(BasePage):
         self.display_products(self.products_frame)
 
     def toggle_sort_criteria(self):
-        """Cycle through the sorting criteria (Name, Category, Price)."""
+        """
+        Cycle through the sorting criteria (Name, Category, Price).
+        """
         current = self.sort_criteria.get()
         criteria = ["Name", "Category", "Price"]
         next_index = (criteria.index(current) + 1) % len(criteria)
@@ -207,7 +214,9 @@ class ProductsPage(BasePage):
         self.update_products(None, None, None)  # Update the product display
 
     def toggle_sort_order(self):
-        """Toggle the sorting order (ASC/DESC)."""
+        """
+        Toggle the sorting order (ASC/DESC).
+        """
         current = self.sort_order.get()
         self.sort_order.set("DESC" if current == "ASC" else "ASC")
         self.update_products(None, None, None)  # Update the product display

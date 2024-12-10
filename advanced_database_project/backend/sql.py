@@ -1,5 +1,5 @@
 import sqlite3
-from typing import Literal, Union, Tuple
+from typing import Literal, Tuple
 
 
 class SqlWrapper:
@@ -39,7 +39,7 @@ class SqlWrapper:
         elif fetch == "one":
             return self.cursor.fetchone()
         
-    def update_table(self, sql_query, sql_parameters: Tuple[str, int] = tuple(), commit=True) -> Union[None, Exception]:
+    def update_table(self, sql_query, sql_parameters: Tuple[str, int] = tuple(), commit=True) -> None | Exception:
         """
         Creates a INSERT/UPDATE/DELETE query
 
