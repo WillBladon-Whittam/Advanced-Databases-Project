@@ -19,7 +19,7 @@ if __name__ == "__main__":
     
     # Check there is only 1 instance of the application running
     if os.path.isfile("running_proccess.pid"):
-        print("Another instance of the script is already running.")
+        print("Another instance of the script is already running. If not, remove 'running_proccess.pid' file.")
         quit()
 
     with open("running_proccess.pid", 'w') as pid_file:

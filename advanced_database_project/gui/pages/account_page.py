@@ -169,6 +169,8 @@ class AccountPage(BasePage):
         for value, entry in field_entries:
             if not self.validate_field(value, entry):
                 error = True
+                
+        password = self.user["Password"]
 
         if self.password.get() and self.password_confirm.get():
             if self.password.get() != self.password_confirm.get():
@@ -180,6 +182,7 @@ class AccountPage(BasePage):
                 self.error_label.configure(text="")
                 self.password_entry.config(highlightthickness=0)
                 self.confirm_password_entry.config(highlightthickness=0)
+                password = self.password.get()
         elif self.password.get():
             self.confirm_password_entry.config(highlightbackground="red", highlightcolor="red", highlightthickness=1)
             self.error_label.configure(text="Passwords do not match!")
@@ -191,13 +194,13 @@ class AccountPage(BasePage):
 
         if not error:
             result = self.db.updateCustomer(
-                self.user["Username"],
-                self.first_name.get(),
-                self.last_name.get(),
-                self.gender.get(),
-                self.email.get(),
-                self.username.get(),
-                self.password.get()
+                current_username=self.user["Username"],
+                firstname=self.first_name.get(),
+                surname=self.last_name.get(),
+                gender=self.gender.get(),
+                email=self.email.get(),
+                new_username=self.username.get(),
+                password=password if isinstance(password, str) else None
             )
 
             if isinstance(result, sqlite3.IntegrityError):
@@ -212,7 +215,11 @@ class AccountPage(BasePage):
                 self.user["Gender"] = self.gender.get()
                 self.user["Email"] = self.email.get()
                 self.user["Username"] = self.username.get()
-                self.user["Password"] = hashlib.sha256(self.password.get().encode()).digest()
+                
+                if isinstance(password, bytes):
+                    self.user["Password"] = password
+                else:
+                    self.user["Password"] = hashlib.sha256(password.encode()).digest()
 
     def logout(self):
         """

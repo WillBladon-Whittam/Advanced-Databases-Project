@@ -1,6 +1,7 @@
 
 import tkinter as tk
 import sqlite3
+import hashlib
 from advanced_database_project.gui.base_page import BasePage
 
 
@@ -213,5 +214,5 @@ class RegisterPage(BasePage):
                 self.user["Gender"] = self.gender.get()
                 self.user["Email"] = self.email.get()
                 self.user["Username"] = self.username.get()
-                self.user["Password"] = self.password.get()
+                self.user["Password"] = hashlib.sha256(self.password.get().encode()).digest()
                 self.navigate_to(self.pages["Home"])

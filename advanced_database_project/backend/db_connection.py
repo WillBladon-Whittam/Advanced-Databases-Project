@@ -288,13 +288,13 @@ class DatabaseConnection(SqlWrapper):
                                      VALUES (?, ?, ?, ?, ?, ?)
                                      """, sql_parameters=(firstname, surname, gender, email, username, hashlib.sha256(password.encode()).digest()))
         
-    def updateCustomer(self, current_username: str,
-                       firstname: str, 
-                       surname: str, 
-                       gender: Literal["Male", "Female"], 
-                       email: str, 
-                       new_username: str, 
-                       password: str) -> None | Exception:
+    def updateCustomer(self, current_username: str = None,
+                       firstname: str = None, 
+                       surname: str = None, 
+                       gender: Literal["Male", "Female"] = None, 
+                       email: str = None, 
+                       new_username: str = None, 
+                       password: str = None) -> None | Exception:
         """
         Update an existing customer in the customer table.
         Use SHA246 Hashing for the password.
@@ -312,16 +312,49 @@ class DatabaseConnection(SqlWrapper):
             Exception: Returns the SQLite exception if there is an error.
             None: Returns None of the insertion was successful
         """
-        return self.update_table("""
-                                     UPDATE Customers
-                                     SET Customer_Firstname = ?,
-                                         Customer_Surname = ?,
-                                         Customer_Gender = ?,
-                                         Customer_Email = ?,
-                                         Customer_Username = ?,
-                                         Customer_Password = ?
-                                     WHERE Customer_Username = ?
-                                     """, sql_parameters=(firstname, surname, gender, email, new_username, hashlib.sha256(password.encode()).digest(), current_username))
+        if not current_username:
+            raise ValueError("The current username is required.")
+
+        set_clauses = []
+        parameters = []
+
+        if firstname is not None:
+            set_clauses.append("Customer_Firstname = ?")
+            parameters.append(firstname)
+
+        if surname is not None:
+            set_clauses.append("Customer_Surname = ?")
+            parameters.append(surname)
+
+        if gender is not None:
+            set_clauses.append("Customer_Gender = ?")
+            parameters.append(gender)
+
+        if email is not None:
+            set_clauses.append("Customer_Email = ?")
+            parameters.append(email)
+
+        if new_username is not None:
+            set_clauses.append("Customer_Username = ?")
+            parameters.append(new_username)
+
+        if password is not None:
+            set_clauses.append("Customer_Password = ?")
+            parameters.append(hashlib.sha256(password.encode()).digest())
+
+        if not set_clauses:
+            raise ValueError("At least one field must be provided to update.")
+
+        # Construct the SQL query
+        query = f"""
+                 UPDATE Customers
+                 SET {', '.join(set_clauses)}
+                 WHERE Customer_Username = ?
+                 """
+        parameters.append(current_username)
+
+        # Execute the query
+        return self.update_table(query, sql_parameters=tuple(parameters))
         
     
 if __name__ == "__main__":
