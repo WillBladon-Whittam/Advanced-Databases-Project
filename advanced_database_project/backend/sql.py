@@ -1,6 +1,6 @@
 import sqlite3
 from pathlib import Path
-from typing import Literal, Tuple
+from typing import Literal, Tuple, List
 
 
 class SqlWrapper:
@@ -19,7 +19,7 @@ class SqlWrapper:
     def execute(self, sql_query: str, sql_parameters: Tuple[str, int] = tuple()) -> None:
         self.cursor.execute(sql_query, sql_parameters)
         
-    def run_sql_script(self, sql_file_path: Path):
+    def run_sql_script(self, sql_file_path: Path) -> None:
         """
         Run an .sql query script
 
@@ -28,40 +28,51 @@ class SqlWrapper:
         """
         with open(sql_file_path, 'r') as file:
             sql_script = file.read()
-            
         
         self.cursor.executescript(sql_script)
         self.db.commit()
 
-    def select_query(self, sql_query, sql_parameters: Tuple[str, int] = tuple(), fetch: Literal['all', 'many', 'one'] = "all", num_fetch: int = 1):
+    def select_query(self, sql_query: str, 
+                     sql_parameters: Tuple[str, int] = tuple(), 
+                     fetch: Literal['all', 'many', 'one'] = "all", 
+                     num_fetch: int = 1,
+                     get_description: bool = False) -> List[tuple] | Tuple[List[tuple], Tuple[tuple]]:
         """
         Creates a SELECT query
 
         Args:
-            sql_query: An SQL Query to execute
-            sql_parameters: Parameters for an SQL query
-            fetch: If set to "all", fetches all the rows returned, 
-                   If set to "one" returns only 1.
-                   If set to "many" returns a set number of rows, specified by num_fetch
+            sql_query (str): An SQL Query to execute
+            sql_parameters (Tuple[str, int]): Parameters for an SQL query
+            fetch (Literal['all', 'many', 'one']): If set to "all", fetches all the rows returned, 
+                                                   If set to "one" returns only 1.
+                                                   If set to "many" returns a set number of rows, specified by num_fetch
+            get_description (bool): Get the description of the database
         """
         if not isinstance(sql_parameters, tuple):
             sql_parameters = (sql_parameters,)
         self.execute(sql_query, sql_parameters)
-        if fetch == "all":
-            return self.cursor.fetchall()
-        elif fetch == "many":
-            return self.cursor.fetchmany(num_fetch)
-        elif fetch == "one":
-            return self.cursor.fetchone()
         
-    def update_table(self, sql_query, sql_parameters: Tuple[str, int] = tuple(), commit=True) -> None | Exception:
+        if fetch == "all":
+            results = self.cursor.fetchall()
+        elif fetch == "many":
+            results = self.cursor.fetchmany(num_fetch)
+        elif fetch == "one":
+            results = self.cursor.fetchone()
+        
+        if get_description:
+            return results, self.cursor.description
+        return results
+        
+    def update_table(self, sql_query: str, 
+                     sql_parameters: Tuple[str, int] = tuple(), 
+                     commit=True) -> None | Exception:
         """
         Creates a INSERT/UPDATE/DELETE query
 
         Args:
-            sql_query: An SQL Query to execute
-            sql_parameters: Parameters for an SQL query
-            commit: Commit changes to database immediatly
+            sql_query (str): An SQL Query to execute
+            sql_parameters (Tuple[str, int]): Parameters for an SQL query
+            commit (bool): Commit changes to database immediatly
         """
         if not isinstance(sql_parameters, tuple):
             sql_parameters = (sql_parameters,)
@@ -72,7 +83,7 @@ class SqlWrapper:
             return e
         except sqlite3.Error as e:
             self.db.rollback()
-            print("Database Error!")
+            print("Database Error!", e)
             return e
         if commit:
             self.db.commit()

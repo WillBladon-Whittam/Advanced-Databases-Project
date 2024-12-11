@@ -3,15 +3,133 @@ from advanced_database_project.backend.sql import SqlWrapper
 import hashlib
 from pathlib import Path
 from typing import Tuple, Literal, List
+from xml.etree.ElementTree import Element, SubElement, tostring, ElementTree
+import xml.etree.ElementTree as ET
 
 
-class DatabaseConnection():
+class DatabaseConnection(SqlWrapper):
     """
     Database Connection to handle the SQL Logic
     """
     def __init__(self, db: str = r".\database.db") -> None:
-        self.sql = SqlWrapper(db)
+        super().__init__(db)
         
+        # Hard code the tables. This stops SQL injection attacks if these are pre-defined
+        self.tables = ["Customers", "Category", "Suppliers", "Products", "Orders", 
+                       "Billing", "Shipping", "Customer_Basket", "Basket_Contents", "Reviews"]
+        
+    def clear_database(self) -> List[None | Exception]:
+        """
+        Clear the entire databaase
+        """
+        results = []
+        for table in reversed(self.tables):
+            results.append(self.update_table(f"DROP TABLE IF EXISTS {table};"))
+        return results
+        
+    def backup_database_to_xml(self, xml_output_path: Path, include_images: bool = True) -> None:
+        """
+        Generate an XML file to create a backup of the database
+
+        Args:
+            xml_output_path (Path): The file location of where to generate the XML file
+            include_images (bool): Whether to save the image BLOB data to the xml file. This makes teh XML file quite large.
+        """
+        root = Element("DatabaseBackup")
+
+        for table_name in self.tables:
+            table_elem = SubElement(root, "Table", name=table_name)
+            
+            schema_info = self.select_query(f"PRAGMA table_info({table_name})")
+
+            schema_element = ET.SubElement(table_elem, "Schema")
+            for column in schema_info:
+                col_element = ET.SubElement(schema_element, "Column", 
+                                            name=column[1], type=column[2], 
+                                            notnull=str(column[3]), 
+                                            pk=str(column[5]))
+                if column[4] is not None:
+                    col_element.set("default", column[4])
+
+            constraints_element = ET.SubElement(table_elem, "Constraints")
+            foreign_keys = self.select_query(f"PRAGMA foreign_key_list({table_name})")
+
+            for fk in foreign_keys:
+                ET.SubElement(constraints_element, "ForeignKey",
+                            column=fk[3], ref_table=fk[2], ref_column=fk[4])
+                
+            data_element = ET.SubElement(table_elem, "Data")            
+            rows, description = self.select_query(f"SELECT * FROM {table_name}", get_description=True)
+            column_names = [desc[0] for desc in description]
+
+            for row in rows:
+                row_elem = SubElement(data_element, "Row")
+                for col_name, col_value in zip(column_names, row):
+                    if not include_images and "Image" in col_name:
+                        continue
+                    col_elem = SubElement(row_elem, col_name)
+                    if isinstance(col_value, bytes):
+                        col_elem.text = col_value.hex() if col_value is not None else "NULL"
+                    else:
+                        col_elem.text = str(col_value) if col_value is not None else "NULL"
+
+        tree = ElementTree(root)
+        with open(xml_output_path, "wb") as f:
+            tree.write(f, encoding="utf-8", xml_declaration=True)
+            
+    def restore_database_from_xml(self, xml_input_path: str):
+        """
+        Restore a database from an XML backup
+
+        Args:
+            xml_input_path (str): The path to the XML file
+        """
+        self.clear_database()
+        
+        tree = ET.parse(xml_input_path)
+        root = tree.getroot()
+
+        for table_element in root.findall('Table'):
+            table_name = table_element.get('name')
+
+            schema_element = table_element.find('Schema')
+            columns = []
+            for column_element in schema_element.findall('Column'):
+                name = column_element.get('name')
+                col_type = column_element.get('type')
+                not_null = 'NOT NULL' if column_element.get('notnull') == '1' else ''
+                default = f"DEFAULT {column_element.get('default')}" if column_element.get('default') else ''
+                pk = 'PRIMARY KEY' if column_element.get('pk') == '1' else ''
+                columns.append(f"{name} {col_type} {not_null} {default} {pk}")
+
+            constraints_element = table_element.find('Constraints')
+            for fk_element in constraints_element.findall('ForeignKey'):
+                column = fk_element.get('column')
+                ref_table = fk_element.get('ref_table')
+                ref_column = fk_element.get('ref_column')
+                columns.append(f"CONSTRAINT {column}_fk FOREIGN KEY ({column}) REFERENCES {ref_table}({ref_column})")
+                
+            self.update_table(f"CREATE TABLE {table_name} ({', '.join(columns)});")
+
+            data_element = table_element.find('Data')
+            for row_element in data_element.findall('Row'):
+                columns_str = ', '.join([f"{v.tag}" for v in row_element])  # Column names
+                values_str = []
+                for v in row_element:
+                    col_name = v.tag
+                    col_type = schema_element.find(f"Column[@name='{col_name}']").get('type')
+
+                    if col_type.upper() == 'BLOB':
+                        value = f"X'{v.text}'" if v.text else 'NULL'
+                    else:
+                        value = f"'{v.text}'" if v.text and v.text != 'NULL' else 'NULL'
+                    
+                    values_str.append(value)
+                values_str = ', '.join(values_str)
+                self.update_table(f"INSERT INTO {table_name} ({columns_str}) VALUES ({values_str});")
+                
+        self.db.commit()
+                
     def insert_image(self, image_path: Path):
         """
         Insert an Image into the products table.
@@ -25,7 +143,7 @@ class DatabaseConnection():
         with open(image_path, 'rb') as img_file:
             binary_data = img_file.read()
 
-        self.sql.update_table("UPDATE Products SET Product_Image = ? WHERE Product_Name = ?",
+        self.update_table("UPDATE Products SET Product_Image = ? WHERE Product_Name = ?",
                               sql_parameters=(binary_data, image_path.stem))
         
     def getCustomerByLogin(self, username: str, password: str) -> Tuple | False | None:
@@ -43,7 +161,7 @@ class DatabaseConnection():
             False: Returning False means that the username was found, but the password was incorrect
             None: Returning None means the username was not found.
         """        
-        password_hash = self.sql.select_query("""
+        password_hash = self.select_query("""
                                               SELECT Customer_Password 
                                               FROM Customers 
                                               WHERE Customer_Username = ?
@@ -51,7 +169,7 @@ class DatabaseConnection():
                                                    fetch="one")
         if password_hash:
             if password_hash[0].hex() == hashlib.sha256(password.encode()).hexdigest():
-                return self.sql.select_query("""
+                return self.select_query("""
                                               SELECT * 
                                               FROM Customers 
                                               WHERE Customer_Username = ?
@@ -94,7 +212,7 @@ class DatabaseConnection():
         # Validation to ensure only ASC and DESC can be entered
         sort_order = "ASC" if sort_order.upper() == "ASC" else "DESC"
         
-        return self.sql.select_query(f"""
+        return self.select_query(f"""
                                     SELECT * FROM products as p
                                     INNER JOIN category c ON p.Category_ID = c.Category_ID
                                     WHERE p.Product_Name LIKE ? AND
@@ -115,7 +233,7 @@ class DatabaseConnection():
         Returns:
             List[Tuple]: Returns a List of Tuples of all the results found. List will be empty if nothing is found.
         """        
-        return self.sql.select_query(f"""SELECT * FROM category""")
+        return self.select_query(f"""SELECT * FROM category""")
     
     def selectBestSellingProducts(self) -> List[Tuple]:
         """
@@ -125,7 +243,7 @@ class DatabaseConnection():
         Returns:
             List[Tuple]: Returns a List of Tuples of all the results found. List will be empty if nothing is found.
         """        
-        return self.sql.select_query("""
+        return self.select_query("""
                                      SELECT 
                                         Products.Product_ID,
                                         Products.Product_Name,
@@ -165,7 +283,7 @@ class DatabaseConnection():
             Exception: Returns the SQLite exception if there is an error.
             None: Returns None of the insertion was successful
         """        
-        return self.sql.update_table("""
+        return self.update_table("""
                                      INSERT INTO Customers (Customer_Firstname, Customer_Surname, Customer_Gender, Customer_Email, Customer_Username, Customer_Password) 
                                      VALUES (?, ?, ?, ?, ?, ?)
                                      """, sql_parameters=(firstname, surname, gender, email, username, hashlib.sha256(password.encode()).digest()))
@@ -194,7 +312,7 @@ class DatabaseConnection():
             Exception: Returns the SQLite exception if there is an error.
             None: Returns None of the insertion was successful
         """
-        return self.sql.update_table("""
+        return self.update_table("""
                                      UPDATE Customers
                                      SET Customer_Firstname = ?,
                                          Customer_Surname = ?,

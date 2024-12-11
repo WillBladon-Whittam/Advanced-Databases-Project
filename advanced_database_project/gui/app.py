@@ -5,6 +5,7 @@ from advanced_database_project.gui.pages.products_page import ProductsPage
 from advanced_database_project.gui.pages.login_page import LoginPage
 from advanced_database_project.gui.pages.register_page import RegisterPage
 from advanced_database_project.gui.pages.account_page import AccountPage
+from advanced_database_project.gui.pages.settings_page import SettingsPage
 from advanced_database_project.backend.db_connection import DatabaseConnection
 
 
@@ -19,7 +20,7 @@ class App(tk.Tk):
         self.db = db
                 
         self.title("Online Hardware Shop App")
-        self.geometry("1280x720")       
+        self.geometry("1280x750")       
                   
         # Create each page - store them in a Dictionary
         self.pages = {}
@@ -34,6 +35,7 @@ class App(tk.Tk):
         self.pages["Home"] = HomePage(self.pages, self.db, self.user)
         self.pages["Products"] = ProductsPage(self.pages, self.db, self.user)
         self.pages["Account"] = AccountPage(self.pages, self.db, self.user)
+        self.pages["Settings"] = SettingsPage(self.pages, self.db, self.user)
         # Shopping Cart Page
         # Checkout Page
         # Account Settings Page (Show customer details and orders)

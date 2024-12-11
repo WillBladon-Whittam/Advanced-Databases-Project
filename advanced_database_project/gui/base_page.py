@@ -2,8 +2,7 @@ from advanced_database_project.backend.db_connection import DatabaseConnection
 
 import tkinter as tk
 from typing import List, Dict
-from PIL import ImageTk, Image
-import io
+
 
 class BasePage(tk.Frame):
     """
@@ -36,7 +35,7 @@ class BasePage(tk.Frame):
         navbar = tk.Frame(self, bg="#333", height=50)
         navbar.grid(row=0, column=0, sticky="nsew")
 
-        buttons = ["Home", "Products", "Cart", "Account", "Contact"]
+        buttons = ["Home", "Products", "Cart", "Account", "Settings"]
         for button_text in buttons:
             button = tk.Button(
                 navbar,
