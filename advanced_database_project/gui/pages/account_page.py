@@ -46,8 +46,10 @@ class AccountPage(BasePage):
         self.gender.set(self.user["Gender"])
         self.email.set(self.user["Email"])
         self.username.set(self.user["Username"])
+        self.password.set("")
+        self.password_confirm.set("")
         self.pack()
-
+    
     def create_account_page(self):
         """
         Create the widgets for the accounts page.
@@ -192,7 +194,7 @@ class AccountPage(BasePage):
             self.error_label.configure(text="Passwords do not match!")
             error = True
 
-        if not error:
+        if not error:            
             result = self.db.updateCustomer(
                 current_username=self.user["Username"],
                 firstname=self.first_name.get(),

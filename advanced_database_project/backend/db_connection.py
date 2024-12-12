@@ -26,6 +26,20 @@ class DatabaseConnection(SqlWrapper):
         for table in reversed(self.tables):
             results.append(self.update_table(f"DROP TABLE IF EXISTS {table};"))
         return results
+    
+    def check_tables(self) -> bool:
+        """
+        Check all the tables exists in the database
+        """
+        results = []
+        for table in self.tables:
+            results.append(True if self.select_query("""
+                                                     SELECT name 
+                                                     FROM sqlite_master 
+                                                     WHERE type='table' AND name=?
+                                                     """, sql_parameters=(table,)) else False)
+        return all(results)
+            
         
     def backup_database_to_xml(self, xml_output_path: Path, include_images: bool = True) -> None:
         """
@@ -41,13 +55,18 @@ class DatabaseConnection(SqlWrapper):
             table_elem = SubElement(root, "Table", name=table_name)
             
             schema_info = self.select_query(f"PRAGMA table_info({table_name})")
-
+            
+            unique_list = []
+            index_list = self.select_query(f"PRAGMA index_list({table_name})")
+            for index in index_list:
+                unique_list.append(self.select_query(f"PRAGMA index_info({index[1]})")[0][2])
+                        
             schema_element = ET.SubElement(table_elem, "Schema")
             for column in schema_info:
                 col_element = ET.SubElement(schema_element, "Column", 
                                             name=column[1], type=column[2], 
                                             notnull=str(column[3]), 
-                                            pk=str(column[5]))
+                                            pk=str(column[5]), unique="1" if column[1] in unique_list else "0")
                 if column[4] is not None:
                     col_element.set("default", column[4])
 
@@ -100,7 +119,8 @@ class DatabaseConnection(SqlWrapper):
                 not_null = 'NOT NULL' if column_element.get('notnull') == '1' else ''
                 default = f"DEFAULT {column_element.get('default')}" if column_element.get('default') else ''
                 pk = 'PRIMARY KEY' if column_element.get('pk') == '1' else ''
-                columns.append(f"{name} {col_type} {not_null} {default} {pk}")
+                unique = 'UNIQUE' if column_element.get('unique') == '1' else ''
+                columns.append(f"{name} {col_type} {not_null} {default} {pk} {unique}")
 
             constraints_element = table_element.find('Constraints')
             for fk_element in constraints_element.findall('ForeignKey'):

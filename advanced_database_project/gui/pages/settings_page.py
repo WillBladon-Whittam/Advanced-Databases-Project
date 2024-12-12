@@ -16,7 +16,9 @@ class SettingsPage(BasePage):
         super().__init__(pages, db, user)
         self.configure(bg="#f7f7f7")
         
+        self.import_path = tk.StringVar(value="./advanced_database_project/backend/backup/database_backup.xml")
         self.export_confirmation = None
+        self.import_entry = None
         
         self.create_settings_page()
         
@@ -49,7 +51,7 @@ class SettingsPage(BasePage):
         settings_message_label.pack(pady=10)
         
         settings_frame = tk.Frame(self, bg="#f7f7f7")
-        settings_frame.grid(row=2, column=0, padx=(0, 20), pady=20)
+        settings_frame.grid(row=2, column=0, padx=(0, 20), pady=10)
         
         reload_label = tk.Label(settings_frame, font=("Arial", 15), bg="#f7f7f7", text="Reload Database: ")
         reload_label.grid(row=0, column=0, pady=(10, 0))
@@ -89,23 +91,25 @@ class SettingsPage(BasePage):
         import_label.grid(row=7, column=0, pady=(10, 0))
         
         import_desc = tk.Label(settings_frame, font=("Arial", 12), bg="#f7f7f7", 
-                               text="Importing the database will restore the database to the XML file defined at,"
-                                    "'./advanced_database_project/backend/backup/database_backup.xml'")
+                               text="Importing the database will restore the database to the XML file defined at the location defined.")
         import_desc.grid(row=8, column=0, pady=(10, 0))
         
         import_warn = tk.Label(settings_frame, font=("Arial", 12), bg="#f7f7f7", fg="#ff2e2e",
                                text="YOU WILL LOSE ANY CUSTOM DATA!")
         import_warn.grid(row=9, column=0, pady=(10, 0))
         
+        self.import_entry = tk.Entry(settings_frame, textvariable=self.import_path, width=54, font=("Arial", 12))
+        self.import_entry.grid(row=10, column=0, padx=(10, 0), pady=5)
+        
         import_button = tk.Button(settings_frame, font=("Arial", 12), width=8, text="Import", command=self.import_db)
-        import_button.grid(row=10, column=0, pady=(10, 0))
+        import_button.grid(row=11, column=0, pady=(10, 0))
         
         
         close_label = tk.Label(settings_frame, font=("Arial", 15), bg="#f7f7f7", text="Close Application: ")
-        close_label.grid(row=11, column=0, pady=(10, 0))
+        close_label.grid(row=12, column=0, pady=(10, 0))
         
         close_button = tk.Button(settings_frame, font=("Arial", 12), width=8, text="Close", bg="#ff2e2e", command=self.close_application)
-        close_button.grid(row=12, column=0, pady=(10, 0))
+        close_button.grid(row=13, column=0, pady=(10, 0))
         
     def close_application(self):
         quit()
@@ -118,8 +122,13 @@ class SettingsPage(BasePage):
         result = messagebox.askquestion("Confirmation", "Importing an XML file will restart the application and all unsave data will be lost.\n "
                                         "Are you sure you want to do this?")
         if result == "yes":
-            self.db.restore_database_from_xml(Path("./advanced_database_project/backend/backup/database_backup.xml"))
-            self.restart_application()
+            import_path = Path(self.import_path.get())
+            if import_path.is_file():
+                self.db.restore_database_from_xml(import_path)
+                self.restart_application()
+            else:
+                # self.error_label.configure(text="Username is already taken!")
+                self.import_entry.config(highlightbackground="red", highlightcolor="red", highlightthickness=1)
         
     def reload_db(self):
         result = messagebox.askquestion("Confirmation", "Reloading the database will restart the application and all unsave data will be lost.\n "

@@ -27,15 +27,13 @@ if __name__ == "__main__":
 
     atexit.register(cleanup)
     
-    # Create database if it doesn't already exist, or the parser is set in the cmd
-    my_file = Path("./database.db")        
-    if args.reload_db or not my_file.is_file():
-        database_connection = DatabaseConnection()
+    # Create database if it doesn't already exist (if tables are missing the database is automatically regenerated), or the parser is set in the cmd
+    my_file = Path("./database.db")   
+    database_connection = DatabaseConnection() 
+    if args.reload_db or not my_file.is_file() or not database_connection.check_tables():
         database_connection.run_sql_script(Path("create_database_script.sql"))
         for path in Path("./advanced_database_project/assets/").iterdir():
            database_connection.insert_image(Path(path))
-    else:
-        database_connection = DatabaseConnection()
 
     # Run the application
     App(database_connection)
