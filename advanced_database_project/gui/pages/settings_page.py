@@ -91,7 +91,7 @@ class SettingsPage(BasePage):
         import_label.grid(row=7, column=0, pady=(10, 0))
         
         import_desc = tk.Label(settings_frame, font=("Arial", 12), bg="#f7f7f7", 
-                               text="Importing the database will restore the database to the XML file defined at the location defined.")
+                               text="Importing the database will restore the database to the XML file at the location defined.")
         import_desc.grid(row=8, column=0, pady=(10, 0))
         
         import_warn = tk.Label(settings_frame, font=("Arial", 12), bg="#f7f7f7", fg="#ff2e2e",

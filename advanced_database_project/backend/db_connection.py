@@ -55,12 +55,14 @@ class DatabaseConnection(SqlWrapper):
             table_elem = SubElement(root, "Table", name=table_name)
             
             schema_info = self.select_query(f"PRAGMA table_info({table_name})")
-            
+                        
             unique_list = []
             index_list = self.select_query(f"PRAGMA index_list({table_name})")
             for index in index_list:
-                unique_list.append(self.select_query(f"PRAGMA index_info({index[1]})")[0][2])
-                        
+                if index[3] == "u":
+                    for constraint in self.select_query(f"PRAGMA index_info({index[1]})"): 
+                        unique_list.append(constraint[2])
+                            
             schema_element = ET.SubElement(table_elem, "Schema")
             for column in schema_info:
                 col_element = ET.SubElement(schema_element, "Column", 
@@ -118,9 +120,15 @@ class DatabaseConnection(SqlWrapper):
                 col_type = column_element.get('type')
                 not_null = 'NOT NULL' if column_element.get('notnull') == '1' else ''
                 default = f"DEFAULT {column_element.get('default')}" if column_element.get('default') else ''
-                pk = 'PRIMARY KEY' if column_element.get('pk') == '1' else ''
                 unique = 'UNIQUE' if column_element.get('unique') == '1' else ''
-                columns.append(f"{name} {col_type} {not_null} {default} {pk} {unique}")
+                columns.append(f"{name} {col_type} {not_null} {default} {unique}")
+
+            primary_keys = []
+            for column_element in schema_element.findall('Column'):
+                if column_element.get('pk') != '0':
+                    primary_keys.append(column_element.get('name'))
+                
+            columns.append(f"PRIMARY KEY ({', '.join(primary_keys)})")
 
             constraints_element = table_element.find('Constraints')
             for fk_element in constraints_element.findall('ForeignKey'):
