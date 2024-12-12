@@ -50,7 +50,7 @@ class LoginPage(BasePage):
             fg="#333",
             width=50,
         )
-        welcome_label.pack(pady=(30, 10))
+        welcome_label.pack(pady=(20, 20))
         
         login_frame = tk.Frame(self, bg="#f7f7f7")
         login_frame.grid(row=2, column=0, padx=(0, 20), pady=20) 

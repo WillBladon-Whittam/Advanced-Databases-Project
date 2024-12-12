@@ -92,22 +92,26 @@ class HomePage(BasePage):
         if product[6] is not None:
             image = Image.open(io.BytesIO(product[6]))
 
-            image.thumbnail((100, 100), Image.LANCZOS)
+            image.thumbnail((150, 150), Image.LANCZOS)
 
             ph = ImageTk.PhotoImage(image)
 
             product_image = tk.Canvas(
-                product_frame, width=100, height=100, bg="#fff", bd=0, highlightthickness=0)
+                product_frame, width=162, height=162, bg="#fff", bd=0, highlightthickness=0)
 
-            x_offset = (100 - image.width) // 2
-            y_offset = (100 - image.height) // 2
+            x_offset = (162 - image.width) // 2
+            y_offset = (162 - image.height) // 2
 
             product_image.create_image(x_offset, y_offset, anchor="nw", image=ph)
 
             product_image.image = ph
             product_image.pack()
 
-        product_name = tk.Label(product_frame, text=product[1], font=("Arial", 14, "bold"), bg="#fff", fg="#333", width=13)
+        if len(product[1]) >= 18:
+            name = "\n".join(product[1].split(" "))
+        else:
+            name = product[1]
+        product_name = tk.Label(product_frame, text=name, font=("Arial", 12, "bold"), bg="#fff", fg="#333", width=13)
         product_name.pack(pady=(10, 5))
 
         product_price = tk.Label(product_frame, text=f"${product[3]:.2f}", font=("Arial", 12), bg="#fff", fg="#007bff")
