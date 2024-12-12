@@ -6,6 +6,7 @@ import io
 
 from advanced_database_project.backend.db_connection import DatabaseConnection
 from advanced_database_project.gui.base_page import BasePage
+from advanced_database_project.gui.pages.product_info_page import ProductInfoPage
 
 
 class ProductsPage(BasePage):
@@ -33,7 +34,30 @@ class ProductsPage(BasePage):
         self.sort_criteria = tk.StringVar(value="Name")
         self.sort_order = tk.StringVar(value="ASC")
         
+        self.canvas = None
+        
+        self.canvas_scoll_bind = None
+        self.canvas_scoll_region_bind = None
+        
         self.create_widgets()
+    
+    def show(self):
+        """
+        Overide the default show function from BasePage - rebind the the scrollwheel to the scrollable canvas
+        """
+        self.update_scroll_region(None, self.canvas)
+        self.canvas_scoll_bind = self.canvas.bind_all("<MouseWheel>", lambda event: self.scroll_canvas(event, self.canvas))
+        self.canvas_scoll_region_bind = self.canvas.bind("<Configure>", lambda event: self.update_scroll_region(event, self.canvas))
+        self.pack()
+        
+    def navigate_to(self, page):
+        """
+        Overide the default show function from BasePage - unbind the the scrollwheel to the scrollable canvas
+        """
+        self.canvas.unbind("<MouseWheel>", self.canvas_scoll_bind)
+        self.canvas.unbind("<Configure>", self.canvas_scoll_region_bind)
+        self.pack_forget()
+        page.show()
 
     def create_widgets(self):
         """
@@ -104,24 +128,20 @@ class ProductsPage(BasePage):
         product_list_frame = tk.Frame(self, bg="#f7f7f7")
         product_list_frame.grid(row=3, column=0, sticky="nsew")
 
-        canvas = tk.Canvas(product_list_frame, bg="#f7f7f7", height=500)
-        canvas.grid(row=3, column=0, sticky="nsew")
+        self.canvas = tk.Canvas(product_list_frame, bg="#f7f7f7", height=500)
+        self.canvas.grid(row=3, column=0, sticky="nsew")
 
         scrollbar = tk.Scrollbar(
-            product_list_frame, orient="vertical", command=canvas.yview)
-        canvas.configure(yscrollcommand=scrollbar.set)
+            product_list_frame, orient="vertical", command=self.canvas.yview)
+        self.canvas.configure(yscrollcommand=scrollbar.set)
 
-        self.products_frame = tk.Frame(canvas, bg="#f7f7f7")
-        canvas.create_window((0, 0), window=self.products_frame, anchor="nw")
-
-        canvas.bind_all("<MouseWheel>", lambda event: self.scroll_canvas(event, canvas))
+        self.products_frame = tk.Frame(self.canvas, bg="#f7f7f7")
+        self.canvas.create_window((0, 0), window=self.products_frame, anchor="nw")
 
         self.display_products(self.products_frame)
 
         product_list_frame.grid_rowconfigure(0, weight=1)
         product_list_frame.grid_columnconfigure(0, weight=1)
-
-        canvas.bind("<Configure>", lambda event: self.update_scroll_region(event, canvas))
 
     def scroll_canvas(self, event, canvas):
         """
@@ -134,6 +154,10 @@ class ProductsPage(BasePage):
         Update the scroll region of the canvas. Stops the canvas from scolling forever.
         """
         canvas.configure(scrollregion=canvas.bbox("all"))
+        
+    def click_product(self, product):
+        self.pages[product[1]] = ProductInfoPage(self.pages, self.db, self.user, product)
+        self.navigate_to(self.pages[product[1]])
 
     def display_products(self, parent):
         """
@@ -148,7 +172,7 @@ class ProductsPage(BasePage):
             )
             product_frame.grid(row=i // 6, column=i %
                                6, padx=10, pady=10, sticky="nsew")
-
+            
             # Placeholder for product image
             if product[6] is not None:
                 image = Image.open(io.BytesIO(product[6]))
@@ -168,7 +192,6 @@ class ProductsPage(BasePage):
                 product_image.image = ph
                 product_image.pack()
                 
-            print(product[1], len(product[1]))
             if len(product[1]) >= 18:
                 name = "\n".join(product[1].split(" "))
             else:
@@ -180,6 +203,12 @@ class ProductsPage(BasePage):
             product_price = tk.Label(product_frame, text=f"${product[3]:.2f}", font=(
                 "Arial", 12), bg="#fff", fg="#007bff")
             product_price.pack()
+            
+            product_frame.bind("<ButtonRelease-1>", lambda _, p=product: self.click_product(p))
+            product_image.bind("<ButtonRelease-1>", lambda _, p=product: self.click_product(p))
+            product_name.bind("<ButtonRelease-1>", lambda _, p=product: self.click_product(p))
+            product_price.bind("<ButtonRelease-1>", lambda _, p=product: self.click_product(p))
+            
 
     def update_products(self, a, b, c):
         """

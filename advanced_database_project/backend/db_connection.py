@@ -263,6 +263,58 @@ class DatabaseConnection(SqlWrapper):
         """        
         return self.select_query(f"""SELECT * FROM category""")
     
+    def selectCustomerById(self, _id: str) -> List[Tuple]:
+        """
+        Returns a customer based on the Customer ID
+        
+        Args:
+            _id (str): The Customer ID of the customer to get.
+
+
+        Returns:
+            List[Tuple]: Returns a List of Tuples of all the results found. List will be empty if nothing is found.
+        """              
+        return self.select_query(f"""SELECT * FROM Customers WHERE Customer_ID = ?""", sql_parameters=(_id,), num_fetch=1)[0]
+    
+    def selectCategoriesById(self, _id: str) -> List[Tuple]:
+        """
+        Returns a category based on the Category ID
+        
+        Args:
+            _id (str): The Category ID of the category to get.
+
+
+        Returns:
+            List[Tuple]: Returns a List of Tuples of all the results found. List will be empty if nothing is found.
+        """              
+        return self.select_query(f"""SELECT * FROM category WHERE Category_ID = ?""", sql_parameters=(_id,), num_fetch=1)[0]
+    
+    def selectSuppliersById(self, _id: str) -> List[Tuple]:
+        """
+        Returns a supplier based on the Supplier ID
+        
+        Args:
+            _id (str): The Supplier ID of the supplier to get.
+
+
+        Returns:
+            List[Tuple]: Returns a List of Tuples of all the results found. List will be empty if nothing is found.
+        """        
+        return self.select_query(f"""SELECT * FROM Suppliers WHERE Supplier_ID = ?""", sql_parameters=(_id,), num_fetch=1)[0]
+    
+    def selectReviewsByProductId(self, _id: str) -> List[Tuple]:
+        """
+        Returns reviews based on the Product ID
+        
+        Args:
+            _id (str): The Product ID of the reviews to get.
+
+
+        Returns:
+            List[Tuple]: Returns a List of Tuples of all the results found. List will be empty if nothing is found.
+        """        
+        return self.select_query(f"""SELECT * FROM Reviews WHERE Product_ID = ?""", sql_parameters=(_id,))
+    
     def selectBestSellingProducts(self) -> List[Tuple]:
         """
         Returns the Top 6 best selling products.

@@ -5,6 +5,7 @@ import io
 
 from advanced_database_project.backend.db_connection import DatabaseConnection
 from advanced_database_project.gui.base_page import BasePage
+from advanced_database_project.gui.pages.product_info_page import ProductInfoPage
 
 
 class HomePage(BasePage):
@@ -87,7 +88,7 @@ class HomePage(BasePage):
         product_frame = tk.Frame(
             parent, bg="#fff", bd=1, relief="solid", padx=10, pady=10
         )
-        product_frame.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
+        product_frame.grid(row=row, column=col, padx=10, pady=(10, 20), sticky="nsew")
 
         if product[6] is not None:
             image = Image.open(io.BytesIO(product[6]))
@@ -116,3 +117,12 @@ class HomePage(BasePage):
 
         product_price = tk.Label(product_frame, text=f"${product[3]:.2f}", font=("Arial", 12), bg="#fff", fg="#007bff")
         product_price.pack()
+        
+        product_frame.bind("<ButtonRelease-1>", lambda _, p=product: self.click_product(p))
+        product_image.bind("<ButtonRelease-1>", lambda _, p=product: self.click_product(p))
+        product_name.bind("<ButtonRelease-1>", lambda _, p=product: self.click_product(p))
+        product_price.bind("<ButtonRelease-1>", lambda _, p=product: self.click_product(p))
+    
+    def click_product(self, product):
+        self.pages[product[1]] = ProductInfoPage(self.pages, self.db, self.user, product)
+        self.navigate_to(self.pages[product[1]])
