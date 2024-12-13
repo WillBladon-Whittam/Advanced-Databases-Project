@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
 import io
+from datetime import datetime
 from typing import List, Dict
 
 from advanced_database_project.backend.db_connection import DatabaseConnection
@@ -24,6 +25,9 @@ class ProductInfoPage(BasePage):
         self.canvas_scoll_bind = None
         self.canvas_scoll_region_bind = None
         
+        self.rating = None
+        self.stars = []
+        
         self.create_widgets()
         
     def show(self):
@@ -39,6 +43,7 @@ class ProductInfoPage(BasePage):
         """
         Overide the default show function from BasePage - unbind the the scrollwheel to the scrollable canvas
         """
+        self.rating = None
         self.canvas.unbind("<MouseWheel>", self.canvas_scoll_bind)
         self.canvas.unbind("<Configure>", self.canvas_scoll_region_bind)
         self.pack_forget()
@@ -71,24 +76,24 @@ class ProductInfoPage(BasePage):
                        
             image = Image.open(io.BytesIO(self.product[6]))
 
-            image.thumbnail((300, 300), Image.LANCZOS)
+            image.thumbnail((320, 320), Image.LANCZOS)
 
             ph = ImageTk.PhotoImage(image)
 
             product_image = tk.Canvas(
-                product_frame, width=300, height=300, bg="#fff", bd=0, highlightthickness=0)
+                product_frame, width=320, height=320, bg="#fff", bd=0, highlightthickness=0)
 
-            x_offset = (300 - image.width) // 2
-            y_offset = (300 - image.height) // 2
+            x_offset = (320 - image.width) // 2
+            y_offset = (320 - image.height) // 2
 
             product_image.create_image(x_offset, y_offset, anchor="nw", image=ph)
 
             product_image.image = ph
             product_image.grid(row=0, column=0, pady=10, sticky="nw")
             
-        price_label = tk.Label(self, text=f"Price: ${self.product[3]:.2f}",
+        price_label = tk.Label(product_frame, text=f"Price: ${self.product[3]:.2f}",
                                font=("Arial", 20), bg="#f7f7f7", fg="#007bff")
-        price_label.grid(row=3, column=0, pady=10, padx=10, sticky="w")
+        price_label.grid(row=1, column=0, pady=10, padx=10, sticky="w")
 
         details_frame = tk.Frame(product_frame, bg="#f7f7f7")
         details_frame.grid(row=0, column=1, pady=5, padx=(10, 0), sticky="nw")
@@ -111,9 +116,9 @@ class ProductInfoPage(BasePage):
             suppliers_info_label.pack(anchor="w")
         
         reviews_frame = tk.Frame(product_frame, bg="#f7f7f7", width=500)
-        reviews_frame.grid(row=0, column=2, pady=5, padx=(10, 0), sticky="ne")
+        reviews_frame.grid(row=0, column=2, pady=(5, 0), padx=(10, 0), sticky="ne")
         
-        self.canvas = tk.Canvas(reviews_frame, bg="#f7f7f7", height=300, width=500)
+        self.canvas = tk.Canvas(reviews_frame, bg="#f7f7f7", height=320, width=500)
         scrollbar = tk.Scrollbar(reviews_frame, orient="vertical", command=self.canvas.yview)
         
         scrollable_frame = tk.Frame(self.canvas, bg="#f7f7f7")
@@ -126,7 +131,7 @@ class ProductInfoPage(BasePage):
         
         reviews_label = tk.Label(scrollable_frame, text=f"Customer Reviews:", 
                                   font=("Arial", 20), bg="#f7f7f7", fg="#555")
-        reviews_label.pack(anchor="nw", pady=5)
+        reviews_label.pack(anchor="nw", pady=(5, 0))
         
         for review in self.db.selectReviewsByProductId(self.product[0]):
             for i, review_value in enumerate(review[1:]):
@@ -140,31 +145,70 @@ class ProductInfoPage(BasePage):
                 elif i == 2:  # Stars
                     stars = ""
                     for _ in range(int(review_value)):
-                        stars += "⭐"
+                        stars += "\u2606"
                     review_info_label = tk.Label(scrollable_frame, text=stars,
                                             font=("Arial", 16), bg="#f7f7f7", fg="#555")
                     review_info_label.pack(anchor="nw")
                 elif i == 3:  # Review Comment
-                    review_info_label = tk.Label(scrollable_frame, text=review_value,
-                                                font=("Arial", 16), bg="#f7f7f7", fg="#555")
+                    if review_value:
+                        review_info_label = tk.Label(scrollable_frame, text=review_value,
+                                                    font=("Arial", 16), bg="#f7f7f7", fg="#555")
                     review_info_label.pack(anchor="nw")
                 elif i == 4:  # Review Date
                     review_info_label = tk.Label(scrollable_frame, text=review_value + "\n",
                                                 font=("Arial", 14), bg="#f7f7f7", fg="#555")
                     review_info_label.pack(anchor="nw")
+                    
+                    
+        leave_review_frame = tk.Frame(product_frame, bg="#f7f7f7")
+        leave_review_frame.grid(row=1, column=2, pady=10, sticky="w")
         
-        basket_frame = tk.Frame(self, bg="#f7f7f7")
-        basket_frame.grid(row=4, column=0, pady=20)
+        self.review_entry = tk.Text(leave_review_frame, font=("Arial", 12), width=30, height=5, wrap="word")
+        self.review_entry.grid(row=0, column=0, padx=(10, 0), pady=10, sticky="nw")
+        
+        for i in range(5):
+            star = tk.Label(leave_review_frame, text="\u2606", font=("Arial", 24), bg="#f7f7f7", fg="#555", cursor="hand2")
+            star.grid(row=0, column=1+i, padx=5, sticky="n")
+            star.bind("<Button-1>", lambda event, r=i+1: self.update_rating(r))
+            self.stars.append(star)
+        
+        leave_review_button = tk.Button(leave_review_frame, text="Leave a Review", font=("Arial", 14), bg="#30d424", fg="#fff",
+                                        command=self.leave_review)
+        leave_review_button.grid(row=1, column=0, padx=(10, 0), sticky="nw")
+        
+        basket_frame = tk.Frame(product_frame, bg="#f7f7f7")
+        basket_frame.grid(row=1, column=0, padx=10, pady=10, sticky="sw")
 
         add_to_basket_btn = tk.Button(basket_frame, text="Add to Basket", font=("Arial", 14), bg="#007bff",
                                       fg="#fff", activebackground="#0056b3", activeforeground="#fff",
                                       command=self.add_to_basket)
         add_to_basket_btn.pack()
         
-        back_button = tk.Button(self, text="Return", font=("Arial", 14), bg="#f7f7f7",
+        back_button = tk.Button(product_frame, text="Return", font=("Arial", 14), bg="#f7f7f7",
                                       fg="#555",
                                       command=lambda: self.navigate_to(self.pages["Products"]))
-        back_button.grid(row=4, column=0, pady=20, padx=20, sticky="se")
+        back_button.grid(row=1, column=2, pady=10, padx=10, sticky="se")
+        
+        self.canvas_scoll_bind = self.canvas.bind_all("<MouseWheel>", lambda event: self.scroll_canvas(event, self.canvas))
+        self.canvas_scoll_region_bind = self.canvas.bind("<Configure>", lambda event: self.update_scroll_region(event, self.canvas))
+        
+    def update_rating(self, new_rating):
+        self.rating = new_rating
+        for i in range(5):
+            if i < self.rating:
+                self.stars[i].config(text="\u2605", fg="gold")  # Filled star
+            else:
+                self.stars[i].config(text="\u2606", fg="gray")  # Empty star
+                
+    def leave_review(self):
+        if self.rating is None:
+            for star in self.stars:
+                star.configure(highlightbackground="red", highlightcolor="red", highlightthickness=1)
+            return
+        self.db.addReview(self.user["Id"], self.product[0], self.rating, self.review_entry.get("1.0", "end-1c"), datetime.now().strftime("%d/%m/%Y"))
+        self.create_widgets()
+        self.rating = None
+        
         
     def scroll_canvas(self, event, canvas):
         """

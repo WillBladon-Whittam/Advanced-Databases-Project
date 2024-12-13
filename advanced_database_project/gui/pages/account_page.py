@@ -227,6 +227,7 @@ class AccountPage(BasePage):
         """
         Logout - resets the user information, and return to the login page
         """
+        self.user["Id"] = 0
         self.user["Firstname"] = ""
         self.user["Surname"] = ""
         self.user["Gender"] = ""

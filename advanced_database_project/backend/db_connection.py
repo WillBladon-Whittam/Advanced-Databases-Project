@@ -315,6 +315,23 @@ class DatabaseConnection(SqlWrapper):
         """        
         return self.select_query(f"""SELECT * FROM Reviews WHERE Product_ID = ?""", sql_parameters=(_id,))
     
+    def addReview(self, customer_id: int, product_id: int, review_stars: int, review_comment: str, review_date: str) -> None | Exception:
+        """
+        Creates a New Review
+
+        Args:
+            customer_id (int): The Customer ID of customer leaving the review
+            product_id (int): The Product ID of thr product
+            review_stars (int): The number of stars out of 5
+            review_comment (str): The review comment
+            review_date (str): The review date
+        """
+        return self.update_table("""
+                                 INSERT INTO Reviews (Customer_ID, Product_ID, Review_Stars, Review_Comment, Review_Date)
+                                 VALUES
+                                 (?, ?, ?, ?, ?)
+                                 """, sql_parameters=(customer_id, product_id, review_stars, review_comment, review_date))
+    
     def selectBestSellingProducts(self) -> List[Tuple]:
         """
         Returns the Top 6 best selling products.

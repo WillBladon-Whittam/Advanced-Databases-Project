@@ -24,7 +24,8 @@ class App(tk.Tk):
                   
         # Create each page - store them in a Dictionary
         self.pages = {}
-        self.user = {"Firstname": "",
+        self.user = {"Id": 0,
+                     "Firstname": "",
                      "Surname": "",
                      "Gender": "",
                      "Email": "",

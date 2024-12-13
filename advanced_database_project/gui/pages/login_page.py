@@ -94,6 +94,7 @@ class LoginPage(BasePage):
         elif user is False:
             self.error_label.configure(text="Invalid Password")
         else:
+            self.user["Id"] = user[0]
             self.user["Firstname"] = user[1]
             self.user["Surname"] = user[2]
             self.user["Gender"] = user[3]

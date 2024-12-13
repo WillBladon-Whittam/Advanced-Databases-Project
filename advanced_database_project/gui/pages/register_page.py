@@ -209,6 +209,7 @@ class RegisterPage(BasePage):
             elif isinstance(result, sqlite3.Error):
                 self.error_label.configure(text="Database Error!")
             else:
+                self.user["Id"] = self.db.cursor.lastrowid
                 self.user["Firstname"] = self.first_name.get()
                 self.user["Surname"] = self.last_name.get()
                 self.user["Gender"] = self.gender.get()
