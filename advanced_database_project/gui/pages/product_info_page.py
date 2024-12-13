@@ -89,7 +89,7 @@ class ProductInfoPage(BasePage):
             product_image.create_image(x_offset, y_offset, anchor="nw", image=ph)
 
             product_image.image = ph
-            product_image.grid(row=0, column=0, pady=10, sticky="nw")
+            product_image.grid(row=0, column=0, pady=(10, 0), padx=20, sticky="nw")
             
         price_label = tk.Label(product_frame, text=f"Price: ${self.product[3]:.2f}",
                                font=("Arial", 20), bg="#f7f7f7", fg="#007bff")
@@ -99,7 +99,7 @@ class ProductInfoPage(BasePage):
         details_frame.grid(row=0, column=1, pady=5, padx=(10, 0), sticky="nw")
         
         product_name_label = tk.Label(details_frame, text=self.product[1],
-                                    font=("Arial", 26), bg="#f7f7f7", fg="#555")
+                                    font=("Arial", 24), bg="#f7f7f7", fg="#555")
         product_name_label.pack(anchor="w", pady=5)
         
         category_label = tk.Label(details_frame, text=f"Category: {self.db.selectCategoriesById(self.product[2])[1]}",
