@@ -3,4 +3,5 @@
 __pycache__
 database.db
 database_backup.xml
-running_proccess.pid
+running_process.pid
+.idea/

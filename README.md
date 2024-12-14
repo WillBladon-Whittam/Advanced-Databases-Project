@@ -1,7 +1,7 @@
 # Advanced-Databases-Project
 Advanced Data Structures project for COM519
 
-# Enviroment Setup
+# Environment Setup
 
 Created with Python 3.12.
 
@@ -39,7 +39,8 @@ Install Dependencies:
  
  When the steps above have been followed, the application should execute and the Login Page should be displayed.
  There is no need to configure / setup the database as the python application automatically does this.
- If the database does not exists, it is created and the .sql script creates the tables and the data. The script then automatically updates the fields that store images in the database.
+ If the database does not exists, it is created and the .sql script creates the tables and the data. 
+ The script then automatically updates the fields that store images in the database.
  
  ## Reset database
 

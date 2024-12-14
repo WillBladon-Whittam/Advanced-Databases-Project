@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from typing import List, Dict
+from typing import List, Dict, Any
 from PIL import ImageTk, Image
 import io
 
@@ -13,18 +13,18 @@ class ProductsPage(BasePage):
     """
     GUI Product Page
 
-    Displays all the products avaliable
+    Displays all the products available
     Allows searching of products by name, category and price.
-    ALlows sorting of products by name, price.
+    Allows sorting of products by name, price.
     """
 
-    def __init__(self, pages: List[tk.Frame], db: DatabaseConnection, user: Dict[str, str]):
-        super().__init__(pages, db, user)
+    def __init__(self, pages: Dict[str, BasePage], db: DatabaseConnection, user: Dict[str, Any],
+                 basket: Dict[str, Any]):
+        super().__init__(pages, db, user, basket)
         self.configure(bg="#f7f7f7")
 
-        self.products = self.db.selectProducts()
-        self.categories = ["All Categories"] + [category[1]
-                                                for category in self.db.selectCategories()]
+        self.products = self.db.select_products()
+        self.categories = ["All Categories"] + [category["Category_Name"] for category in self.db.select_categories()]
 
         # Initialise product search information variables
         self.search_var = tk.StringVar()
@@ -33,57 +33,42 @@ class ProductsPage(BasePage):
         self.max_price_var = tk.DoubleVar(value=5000)
         self.sort_criteria = tk.StringVar(value="Name")
         self.sort_order = tk.StringVar(value="ASC")
-        
+
         self.canvas = None
-        
-        self.canvas_scoll_bind = None
-        self.canvas_scoll_region_bind = None
-        
+        self.products_frame = None
+
         self.create_widgets()
-    
-    def show(self):
+
+    def show(self) -> None:
         """
-        Overide the default show function from BasePage - rebind the the scrollwheel to the scrollable canvas
+        Override the default show function from BasePage - rebind the scrollwheel to the scrollable canvas
         """
         self.update_scroll_region(None, self.canvas)
-        self.canvas_scoll_bind = self.canvas.bind_all("<MouseWheel>", lambda event: self.scroll_canvas(event, self.canvas))
-        self.canvas_scoll_region_bind = self.canvas.bind("<Configure>", lambda event: self.update_scroll_region(event, self.canvas))
+        self.canvas.bind_all("<MouseWheel>", lambda event: self.scroll_canvas(event, self.canvas))
+        self.canvas.bind("<Configure>", lambda event: self.update_scroll_region(event, self.canvas))
         self.pack()
-        
-    def navigate_to(self, page):
-        """
-        Overide the default show function from BasePage - unbind the the scrollwheel to the scrollable canvas
-        """
-        self.canvas.unbind("<MouseWheel>", self.canvas_scoll_bind)
-        self.canvas.unbind("<Configure>", self.canvas_scoll_region_bind)
-        self.pack_forget()
-        page.show()
 
-    def create_widgets(self):
+    def create_widgets(self) -> None:
         """
         Create the widgets for the products page.
         """
         header_frame = tk.Frame(self, bg="#f7f7f7")
         header_frame.grid(row=1, column=0)
 
-        title = tk.Label(header_frame, text="Product Listings",
-                         font=("Arial", 24, "bold"), bg="#f7f7f7")
+        title = tk.Label(header_frame, text="Product Listings", font=("Arial", 24, "bold"), bg="#f7f7f7")
         title.pack(pady=5)
 
         search_frame = tk.Frame(self, bg="#f7f7f7")
         search_frame.grid(row=2, column=0)
 
-        search_label = tk.Label(
-            search_frame, text="Search Name:", font=("Arial", 12), bg="#f7f7f7")
+        search_label = tk.Label(search_frame, text="Search Name:", font=("Arial", 12), bg="#f7f7f7")
         search_label.grid(row=2, column=0, pady=5)
 
-        search_entry = tk.Entry(
-            search_frame, textvariable=self.search_var, font=("Arial", 12))
+        search_entry = tk.Entry(search_frame, textvariable=self.search_var, font=("Arial", 12))
         search_entry.grid(row=2, column=1, padx=(0, 20), pady=5)
         self.search_var.trace_add('write', self.update_products)
 
-        category_label = tk.Label(
-            search_frame, text="Filter Category:", font=("Arial", 12), bg="#f7f7f7")
+        category_label = tk.Label(search_frame, text="Filter Category:", font=("Arial", 12), bg="#f7f7f7")
         category_label.grid(row=2, column=2, pady=5)
 
         category_dropdown = ttk.Combobox(
@@ -91,38 +76,29 @@ class ProductsPage(BasePage):
         category_dropdown.grid(row=2, column=3, padx=(0, 20), pady=5)
         self.category_var.trace_add('write', self.update_products)
 
-        price_label = tk.Label(
-            search_frame, text="Price Range ($):", font=("Arial", 12), bg="#f7f7f7")
+        price_label = tk.Label(search_frame, text="Price Range ($):", font=("Arial", 12), bg="#f7f7f7")
         price_label.grid(row=2, column=4, pady=5)
 
-        min_price_entry = tk.Entry(
-            search_frame, textvariable=self.min_price_var, font=("Arial", 12), width=10)
+        min_price_entry = tk.Entry(search_frame, textvariable=self.min_price_var, font=("Arial", 12), width=10)
         min_price_entry.grid(row=2, column=5, padx=(0, 10), pady=5)
         self.min_price_var.trace_add('write', self.update_products)
 
-        max_price_entry = tk.Entry(
-            search_frame, textvariable=self.max_price_var, font=("Arial", 12), width=10)
+        max_price_entry = tk.Entry(search_frame, textvariable=self.max_price_var, font=("Arial", 12), width=10)
         max_price_entry.grid(row=2, column=6, padx=(0, 20), pady=5)
         self.max_price_var.trace_add('write', self.update_products)
 
         sort_frame = tk.Frame(search_frame, bg="#f7f7f7")
         sort_frame.grid(row=2, column=8, pady=5)
 
-        sort_label = tk.Label(sort_frame, text="Sort by:",
-                              font=("Arial", 12), bg="#f7f7f7")
+        sort_label = tk.Label(sort_frame, text="Sort by:", font=("Arial", 12), bg="#f7f7f7")
         sort_label.grid(row=2, column=0, padx=(0, 10))
 
-        sort_criteria_button = tk.Button(sort_frame, textvariable=self.sort_criteria, font=(
-            "Arial", 12), command=self.toggle_sort_criteria, width=8)
+        sort_criteria_button = tk.Button(
+            sort_frame, textvariable=self.sort_criteria, font=("Arial", 12), command=self.toggle_sort_criteria, width=8)
         sort_criteria_button.grid(row=2, column=1, padx=(0, 10))
 
         sort_order_button = tk.Button(
-            sort_frame,
-            textvariable=self.sort_order,
-            font=("Arial", 10),
-            command=self.toggle_sort_order,
-            width=4
-        )
+            sort_frame, textvariable=self.sort_order, font=("Arial", 10), command=self.toggle_sort_order, width=4)
         sort_order_button.grid(row=2, column=2)
 
         product_list_frame = tk.Frame(self, bg="#f7f7f7")
@@ -131,8 +107,7 @@ class ProductsPage(BasePage):
         self.canvas = tk.Canvas(product_list_frame, bg="#f7f7f7", height=500)
         self.canvas.grid(row=3, column=0, sticky="nsew")
 
-        scrollbar = tk.Scrollbar(
-            product_list_frame, orient="vertical", command=self.canvas.yview)
+        scrollbar = tk.Scrollbar(product_list_frame, orient="vertical", command=self.canvas.yview)
         self.canvas.configure(yscrollcommand=scrollbar.set)
 
         self.products_frame = tk.Frame(self.canvas, bg="#f7f7f7")
@@ -143,23 +118,14 @@ class ProductsPage(BasePage):
         product_list_frame.grid_rowconfigure(0, weight=1)
         product_list_frame.grid_columnconfigure(0, weight=1)
 
-    def scroll_canvas(self, event, canvas):
+    def click_product(self, product: Dict[str, Any]):
         """
-        Scroll the canvas with the mouse wheel.
+        Click on a product and go to that Products page
         """
-        canvas.yview_scroll(-1 * int(event.delta / 120), "units")
+        self.pages[product["Product_Name"]] = ProductInfoPage(self.pages, self.db, self.user, self.basket, product)
+        self.navigate_to(self.pages[product["Product_Name"]])
 
-    def update_scroll_region(self, event, canvas):
-        """
-        Update the scroll region of the canvas. Stops the canvas from scolling forever.
-        """
-        canvas.configure(scrollregion=canvas.bbox("all"))
-        
-    def click_product(self, product):
-        self.pages[product[1]] = ProductInfoPage(self.pages, self.db, self.user, product)
-        self.navigate_to(self.pages[product[1]])
-
-    def display_products(self, parent):
+    def display_products(self, parent: tk.Frame):
         """
         Display products as a grid, with 6 in a column.
         """
@@ -167,22 +133,17 @@ class ProductsPage(BasePage):
             widget.destroy()
 
         for i, product in enumerate(self.products):
-            product_frame = tk.Frame(
-                parent, bg="#fff", bd=1, relief="solid", padx=10, pady=10, width=200,
-            )
-            product_frame.grid(row=i // 6, column=i %
-                               6, padx=10, pady=10, sticky="nsew")
-            
-            # Placeholder for product image
-            if product[6] is not None:
-                image = Image.open(io.BytesIO(product[6]))
+            product_frame = tk.Frame(parent, bg="#fff", bd=1, relief="solid", padx=10, pady=10, width=200)
+            product_frame.grid(row=i // 6, column=i % 6, padx=10, pady=10, sticky="nsew")
+            product_frame.bind("<ButtonRelease-1>", lambda _, p=product: self.click_product(p))
 
+            if product["Product_Image"] is not None:
+                image = Image.open(io.BytesIO(product["Product_Image"]))
                 image.thumbnail((150, 150), Image.LANCZOS)
 
                 ph = ImageTk.PhotoImage(image)
 
-                product_image = tk.Canvas(
-                    product_frame, width=162, height=162, bg="#fff", bd=0, highlightthickness=0)
+                product_image = tk.Canvas(product_frame, width=162, height=162, bg="#fff", bd=0, highlightthickness=0)
 
                 x_offset = (162 - image.width) // 2
                 y_offset = (162 - image.height) // 2
@@ -191,24 +152,21 @@ class ProductsPage(BasePage):
 
                 product_image.image = ph
                 product_image.pack()
-                
-            if len(product[1]) >= 18:
-                name = "\n".join(product[1].split(" "))
-            else:
-                name = product[1]
-            product_name = tk.Label(product_frame, text=name, font=(
-                "Arial", 12, "bold"), bg="#fff", fg="#333", width=15)
-            product_name.pack(pady=(10, 5))
+                product_image.bind("<ButtonRelease-1>", lambda _, p=product: self.click_product(p))
 
-            product_price = tk.Label(product_frame, text=f"${product[3]:.2f}", font=(
-                "Arial", 12), bg="#fff", fg="#007bff")
-            product_price.pack()
-            
-            product_frame.bind("<ButtonRelease-1>", lambda _, p=product: self.click_product(p))
-            product_image.bind("<ButtonRelease-1>", lambda _, p=product: self.click_product(p))
+            if len(product["Product_Name"]) >= 18:
+                name = "\n".join(product["Product_Name"].split(" "))
+            else:
+                name = product["Product_Name"]
+            product_name = tk.Label(
+                product_frame, text=name, font=("Arial", 12, "bold"), bg="#fff", fg="#333", width=15)
+            product_name.pack(pady=(10, 5))
             product_name.bind("<ButtonRelease-1>", lambda _, p=product: self.click_product(p))
+
+            product_price = tk.Label(
+                product_frame, text=f"${product["Price"]:.2f}", font=("Arial", 12), bg="#fff", fg="#007bff")
+            product_price.pack()
             product_price.bind("<ButtonRelease-1>", lambda _, p=product: self.click_product(p))
-            
 
     def update_products(self, a, b, c):
         """
@@ -230,11 +188,11 @@ class ProductsPage(BasePage):
         except tk.TclError:
             max_price_var = 5000
 
-        self.products = self.db.selectProducts(filter_name=self.search_var.get().lower(),
-                                               filter_category=category_var,
-                                               filter_price=(min_price_var, max_price_var),
-                                               sort_by=self.sort_criteria.get(),
-                                               sort_order=self.sort_order.get())
+        self.products = self.db.select_products(filter_name=self.search_var.get().lower(),
+                                                filter_category=category_var,
+                                                filter_price=(min_price_var, max_price_var),
+                                                sort_by=self.sort_criteria.get(),
+                                                sort_order=self.sort_order.get())
         self.display_products(self.products_frame)
 
     def toggle_sort_criteria(self):

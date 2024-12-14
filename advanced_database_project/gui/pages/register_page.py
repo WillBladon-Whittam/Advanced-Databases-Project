@@ -1,19 +1,23 @@
-
 import tkinter as tk
 import sqlite3
 import hashlib
+from datetime import datetime
+from typing import Dict, Any
+
 from advanced_database_project.gui.base_page import BasePage
+from advanced_database_project.backend.db_connection import DatabaseConnection
 
 
 class RegisterPage(BasePage):
     """
     GUI Register Page - displayed when a user creates an account
     """
-    
-    def __init__(self, pages, db, user):
-        super().__init__(pages, db, user, create_base=False)
+
+    def __init__(self, pages: Dict[str, BasePage], db: DatabaseConnection, user: Dict[str, Any],
+                 basket: Dict[str, Any]):
+        super().__init__(pages, db, user, basket, create_base=False)
         self.configure(bg="#f7f7f7")
-        
+
         # Initialise product search information variables
         self.first_name = tk.StringVar()
         self.last_name = tk.StringVar()
@@ -23,21 +27,14 @@ class RegisterPage(BasePage):
         self.password = tk.StringVar()
         self.password_confirm = tk.StringVar()
         self.error_label = None
-        
-        # Initialise Tkitner widgets attributes
-        self.first_name_entry = None
-        self.last_name_entry = None
-        self.email_entry = None
-        self.username_entry = None
-        self.password_entry = None
-        self.confirm_password_entry = None
-        self.error_label = None
-        
-        self.create_register()
-        
-    def navigate_to(self, page):
+
+        self.entries = {}
+
+        self.create_widgets()
+
+    def navigate_to(self, page: BasePage) -> None:
         """
-        Overide the default naviage_to function from BasePage - Reset the all Entry boxes after the page has changed.
+        Override the default navigate_to function from BasePage - Reset the all Entry boxes after the page has changed.
         """
         self.first_name.set("")
         self.last_name.set("")
@@ -47,119 +44,116 @@ class RegisterPage(BasePage):
         self.password.set("")
         self.password_confirm.set("")
         self.error_label.configure(text="")
-    
+
         self.pack_forget()
         page.show()
 
-    def create_register(self):
+    def create_widgets(self) -> None:
         """
         Create the widgets for the register page.
         """
         header_frame = tk.Frame(self, bg="#f7f7f7")
-        header_frame.grid(row=1, column=0, sticky="nsew") 
-        
+        header_frame.grid(row=1, column=0, sticky="nsew")
+
         register_message = tk.Frame(header_frame, bg="#e6e6e6", pady=20)
         register_message.pack(fill="x")
         register_message_label = tk.Label(
-            register_message,
-            text="Register!",
-            font=("Arial", 24, "bold"),
-            bg="#e6e6e6",
-            fg="#333",
-            width=50,
-        )
+            register_message, text="Register!", font=("Arial", 24, "bold"), bg="#e6e6e6", fg="#333", width=50)
         register_message_label.pack(pady=20)
-        
+
         register_frame = tk.Frame(self, bg="#f7f7f7")
-        register_frame.grid(row=2, column=0, padx=(0, 20), pady=20) 
-        
-        first_name_label = tk.Label(
-            register_frame, text="First Name:", font=("Arial", 12), bg="#f7f7f7")
+        register_frame.grid(row=2, column=0, padx=(0, 20), pady=20)
+
+        first_name_label = tk.Label(register_frame, text="First Name:", font=("Arial", 12), bg="#f7f7f7")
         first_name_label.grid(row=0, column=0, pady=5)
-        
-        self.first_name_entry = tk.Entry(register_frame, textvariable=self.first_name, font=("Arial", 12))
-        self.first_name_entry.grid(row=0, column=1, padx=(0, 20), pady=5)
-        
-        last_name_label = tk.Label(
-            register_frame, text="Last Name:", font=("Arial", 12), bg="#f7f7f7")
+
+        self.entries["first_name"] = tk.Entry(register_frame, textvariable=self.first_name, font=("Arial", 12))
+        self.entries["first_name"].grid(row=0, column=1, padx=(0, 20), pady=5)
+
+        last_name_label = tk.Label(register_frame, text="Last Name:", font=("Arial", 12), bg="#f7f7f7")
         last_name_label.grid(row=1, column=0, pady=5)
-        
-        self.last_name_entry = tk.Entry(register_frame, textvariable=self.last_name, font=("Arial", 12))
-        self.last_name_entry.grid(row=1, column=1, padx=(0, 20), pady=5)
-        
-        gender_label = tk.Label(
-            register_frame, text="Gender:", font=("Arial", 12), bg="#f7f7f7")
+
+        self.entries["last_name"] = tk.Entry(register_frame, textvariable=self.last_name, font=("Arial", 12))
+        self.entries["last_name"].grid(row=1, column=1, padx=(0, 20), pady=5)
+
+        gender_label = tk.Label(register_frame, text="Gender:", font=("Arial", 12), bg="#f7f7f7")
         gender_label.grid(row=2, column=0, pady=5)
 
         gender_buttons_frame = tk.Frame(register_frame, bg="#f7f7f7")
         gender_buttons_frame.grid(row=2, column=1, columnspan=2, pady=5, sticky="ew")
 
-        male_button = tk.Radiobutton(gender_buttons_frame, text="Male", variable=self.gender, value="Male", bg="#f7f7f7")
-        female_button = tk.Radiobutton(gender_buttons_frame, text="Female", variable=self.gender, value="Female", bg="#f7f7f7")
+        male_button = tk.Radiobutton(
+            gender_buttons_frame, text="Male", variable=self.gender, value="Male", bg="#f7f7f7")
+        female_button = tk.Radiobutton(
+            gender_buttons_frame, text="Female", variable=self.gender, value="Female", bg="#f7f7f7")
 
         male_button.grid(row=0, column=0, padx=(0, 20), pady=5)
         female_button.grid(row=0, column=1, padx=(0, 20), pady=5)
-        
+
         email_label = tk.Label(
             register_frame, text="Email:", font=("Arial", 12), bg="#f7f7f7")
         email_label.grid(row=3, column=0, pady=5)
-        
-        self.email_entry = tk.Entry(register_frame, textvariable=self.email, font=("Arial", 12))
-        self.email_entry.grid(row=3, column=1, padx=(0, 20), pady=5)
 
-        username_label = tk.Label(
-            register_frame, text="Username:", font=("Arial", 12), bg="#f7f7f7")
+        self.entries["email"] = tk.Entry(register_frame, textvariable=self.email, font=("Arial", 12))
+        self.entries["email"].grid(row=3, column=1, padx=(0, 20), pady=5)
+
+        username_label = tk.Label(register_frame, text="Username:", font=("Arial", 12), bg="#f7f7f7")
         username_label.grid(row=4, column=0, pady=5)
-        
-        self.username_entry = tk.Entry(register_frame, textvariable=self.username, font=("Arial", 12))
-        self.username_entry.grid(row=4, column=1, padx=(0, 20), pady=5)
-        
-        password_label = tk.Label(
-            register_frame, text="Password:", font=("Arial", 12), bg="#f7f7f7")
+
+        self.entries["username"] = tk.Entry(register_frame, textvariable=self.username, font=("Arial", 12))
+        self.entries["username"].grid(row=4, column=1, padx=(0, 20), pady=5)
+
+        password_label = tk.Label(register_frame, text="Password:", font=("Arial", 12), bg="#f7f7f7")
         password_label.grid(row=5, column=0, pady=5)
-        
-        self.password_entry = tk.Entry(register_frame, textvariable=self.password, font=("Arial", 12), show="*")
-        self.password_entry.grid(row=5, column=1, padx=(0, 20), pady=5)
-        
-        confirm_password_label = tk.Label(
-            register_frame, text="Confirm Password:", font=("Arial", 12), bg="#f7f7f7")
+
+        self.entries["password"] = tk.Entry(register_frame, textvariable=self.password, font=("Arial", 12), show="*")
+        self.entries["password"].grid(row=5, column=1, padx=(0, 20), pady=5)
+
+        confirm_password_label = tk.Label(register_frame, text="Confirm Password:", font=("Arial", 12), bg="#f7f7f7")
         confirm_password_label.grid(row=6, column=0, pady=5)
-        
-        self.confirm_password_entry = tk.Entry(register_frame, textvariable=self.password_confirm, font=("Arial", 12), show="*")
-        self.confirm_password_entry.grid(row=6, column=1, padx=(0, 20), pady=5)
-        
+
+        self.entries["password_confirm"] = tk.Entry(
+            register_frame, textvariable=self.password_confirm, font=("Arial", 12), show="*")
+        self.entries["password_confirm"].grid(row=6, column=1, padx=(0, 20), pady=5)
+
         self.error_label = tk.Label(register_frame, font=("Arial", 12), bg="#f7f7f7", fg="#ff0000")
         self.error_label.grid(row=7, column=0, pady=(10, 0))
-        
-        register_button = tk.Button(register_frame, font=("Arial", 12), width=8, text="Register", command=self.register)
+
+        register_button = tk.Button(
+            register_frame, font=("Arial", 12), width=8, text="Register", command=self.register_user)
         register_button.grid(row=7, column=1, pady=(10, 0))
-        
-        go_back_button = tk.Button(register_frame, font=("Arial", 12), width=8, text="Back", command=self.return_to_login)
+
+        go_back_button = tk.Button(
+            register_frame, font=("Arial", 12), width=8, text="Back", command=self.return_to_login)
         go_back_button.grid(row=7, column=2, pady=(10, 0))
-        
+
     @staticmethod
-    def validate_field(value: str, entry_widget: tk.Entry):
+    def validate_field(value: str, entry_widget: tk.Entry) -> bool:
         """
         Validates a field and updates its Entry based on whether it is filled.
 
         Args:
-            value (str): The value to check taht isn't empty
+            value (str): The value to check that isn't empty
             entry_widget (tk.Entry): The tkitner widget that needs updating
-        """   
+
+        Returns:
+            True: If the Entry Widget provided does have a value
+            False: If the Entry Widget provided does not have a value
+        """
         if not value:
             entry_widget.config(highlightbackground="red", highlightcolor="red", highlightthickness=1)
             return False
         else:
             entry_widget.config(highlightthickness=0)
             return True
-        
-    def return_to_login(self):
+
+    def return_to_login(self) -> None:
         """
         Return back to the Login Page
         """
         self.navigate_to(self.pages["Login"])
 
-    def register(self):
+    def register_user(self) -> None:
         """
         Register a new customer.
         - Username needs to be unique
@@ -169,12 +163,12 @@ class RegisterPage(BasePage):
         error = False
 
         field_entries = [
-            (self.first_name.get(), self.first_name_entry),
-            (self.last_name.get(), self.last_name_entry),
-            (self.email.get(), self.email_entry),
-            (self.username.get(), self.username_entry),
-            (self.password.get(), self.password_entry),
-            (self.password_confirm.get(), self.confirm_password_entry),
+            (self.first_name.get(), self.entries["first_name"]),
+            (self.last_name.get(), self.entries["last_name"]),
+            (self.email.get(), self.entries["email"]),
+            (self.username.get(), self.entries["username"]),
+            (self.password.get(), self.entries["password"]),
+            (self.password_confirm.get(), self.entries["password_confirm"]),
         ]
 
         for value, entry in field_entries:
@@ -184,17 +178,18 @@ class RegisterPage(BasePage):
         # Check if passwords match
         if self.password.get() and self.password_confirm.get():
             if self.password.get() != self.password_confirm.get():
-                self.password_entry.config(highlightbackground="red", highlightcolor="red", highlightthickness=1)
-                self.confirm_password_entry.config(highlightbackground="red", highlightcolor="red", highlightthickness=1)
+                self.entries["password"].config(highlightbackground="red", highlightcolor="red", highlightthickness=1)
+                self.entries["password_confirm"].config(
+                    highlightbackground="red", highlightcolor="red", highlightthickness=1)
                 self.error_label.configure(text="Passwords do not match!")
                 error = True
             else:
                 self.error_label.configure(text="")
-                self.password_entry.config(highlightthickness=0)
-                self.confirm_password_entry.config(highlightthickness=0)
+                self.entries["password"].config(highlightthickness=0)
+                self.entries["password_confirm"].config(highlightthickness=0)
 
         if not error:
-            result = self.db.insertCustomer(
+            result = self.db.insert_customer(
                 self.first_name.get(),
                 self.last_name.get(),
                 self.gender.get(),
@@ -205,15 +200,23 @@ class RegisterPage(BasePage):
 
             if isinstance(result, sqlite3.IntegrityError):
                 self.error_label.configure(text="Username is already taken!")
-                self.username_entry.config(highlightbackground="red", highlightcolor="red", highlightthickness=1)
+                self.entries["username"].config(highlightbackground="red", highlightcolor="red", highlightthickness=1)
             elif isinstance(result, sqlite3.Error):
                 self.error_label.configure(text="Database Error!")
             else:
-                self.user["Id"] = self.db.cursor.lastrowid
-                self.user["Firstname"] = self.first_name.get()
-                self.user["Surname"] = self.last_name.get()
-                self.user["Gender"] = self.gender.get()
-                self.user["Email"] = self.email.get()
-                self.user["Username"] = self.username.get()
-                self.user["Password"] = hashlib.sha256(self.password.get().encode()).digest()
+                self.user["Customer_ID"] = self.db.cursor.lastrowid
+                self.user["Customer_Firstname"] = self.first_name.get()
+                self.user["Customer_Surname"] = self.last_name.get()
+                self.user["Customer_Gender"] = self.gender.get()
+                self.user["Customer_Email"] = self.email.get()
+                self.user["Customer_Username"] = self.username.get()
+                self.user["Customer_Password"] = hashlib.sha256(self.password.get().encode()).digest()
+
+                basket = self.db.get_basket_by_customer_id(self.user["Customer_ID"])
+                if basket is None:
+                    self.db.create_basket_by_customer_id(self.user["Customer_ID"], datetime.now().strftime("%d/%m/%Y"))
+                    self.basket.update(self.db.get_basket_by_customer_id(self.user["Customer_ID"]))
+                else:
+                    self.basket.update(basket)
+
                 self.navigate_to(self.pages["Home"])
