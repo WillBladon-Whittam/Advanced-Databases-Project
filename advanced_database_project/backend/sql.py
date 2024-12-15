@@ -33,6 +33,7 @@ class SqlWrapper:
         with open(sql_file_path, 'r') as file:
             sql_script = file.read()
 
+
         self.cursor.executescript(sql_script)
         self.db.commit()
 

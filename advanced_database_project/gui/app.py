@@ -12,7 +12,7 @@ from advanced_database_project.backend.db_connection import DatabaseConnection
 
 class App(tk.Tk):
     """
-    Main Application - Configures the tab, creates all the pages, runs even loop
+    Main Application - Configures the tab, creates all the pages, runs event loop
     Opens the Home Page to start with.
     """
 
@@ -21,9 +21,8 @@ class App(tk.Tk):
         self.db = db
 
         self.title("Online Hardware Shop App")
-        self.geometry("1280x750")
+        self.geometry("1300x750")
 
-        # Create each page - store them in a Dictionary
         self.pages = {}
         self.basket = {}
         self.user = {}
@@ -32,7 +31,7 @@ class App(tk.Tk):
         self.pages["Register"] = RegisterPage(self.pages, self.db, self.user, self.basket)
         self.pages["Home"] = HomePage(self.pages, self.db, self.user, self.basket)
         self.pages["Products"] = ProductsPage(self.pages, self.db, self.user, self.basket)
-        self.pages["Account"] = AccountPage(self.pages, self.db, self.user, self.basket)  # (Show customer details and orders)
+        self.pages["Account"] = AccountPage(self.pages, self.db, self.user, self.basket)
         self.pages["Settings"] = SettingsPage(self.pages, self.db, self.user, self.basket)
         self.pages["Cart"] = BasketPage(self.pages, self.db, self.user, self.basket)
 

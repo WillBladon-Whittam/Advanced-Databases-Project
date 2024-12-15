@@ -1,3 +1,4 @@
+import sqlite3
 import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk
@@ -27,7 +28,9 @@ class ProductInfoPage(BasePage):
         self.rating = None
         self.stars = []
 
-        self.quantity = 1
+        self.quantity = tk.StringVar(value="1")
+
+        self.result_label = None
 
         self.create_widgets()
 
@@ -35,6 +38,8 @@ class ProductInfoPage(BasePage):
         """
         Override the default show function from BasePage - rebind the scrollwheel to the scrollable canvas
         """
+        self.product = self.db.select_products(self.product["Product_Name"])[0]
+        self.refresh_page()
         self.update_scroll_region(None, self.canvas)
         self.canvas.bind_all("<MouseWheel>", lambda event: self.scroll_canvas(event, self.canvas))
         self.canvas.bind("<Configure>", lambda event: self.update_scroll_region(event, self.canvas))
@@ -55,15 +60,15 @@ class ProductInfoPage(BasePage):
         header_frame = tk.Frame(self, bg="#f7f7f7")
         header_frame.grid(row=1, column=0, sticky="nsew")
 
-        settings_message = tk.Frame(header_frame, bg="#e6e6e6", pady=20)
-        settings_message.pack(fill="x")
-        settings_message_label = tk.Label(
-            settings_message, text=self.product["Product_Name"], font=("Arial", 24, "bold"),
+        product_name_frame = tk.Frame(header_frame, bg="#e6e6e6", pady=20)
+        product_name_frame.pack(fill="x")
+        product_name_label = tk.Label(
+            product_name_frame, text=self.product["Product_Name"], font=("Arial", 24, "bold"),
             bg="#e6e6e6", fg="#333", width=50, )
-        settings_message_label.pack(pady=10)
+        product_name_label.pack()
 
         product_frame = tk.Frame(self, bg="#f7f7f7")
-        product_frame.grid(row=2, column=0, pady=10, sticky="w")
+        product_frame.grid(row=2, column=0, pady=(10, 0), sticky="w")
 
         if self.product["Product_Image"] is not None:
             image = Image.open(io.BytesIO(self.product["Product_Image"]))
@@ -79,11 +84,15 @@ class ProductInfoPage(BasePage):
             product_image.create_image(x_offset, y_offset, anchor="nw", image=ph)
 
             product_image.image = ph
-            product_image.grid(row=0, column=0, pady=(10, 0), padx=20, sticky="nw")
+            product_image.grid(row=0, column=0, padx=20, sticky="nw")
+
+        stock_label = tk.Label(
+            product_frame, text=f"Available Stock: {self.product["Stock_Level"]}", font=("Arial", 20), bg="#f7f7f7")
+        stock_label.grid(row=1, column=0, pady=(0, 10), padx=10, sticky="w")
 
         price_label = tk.Label(
             product_frame, text=f"Price: ${self.product["Price"]:.2f}", font=("Arial", 20), bg="#f7f7f7", fg="#007bff")
-        price_label.grid(row=1, column=0, pady=10, padx=10, sticky="w")
+        price_label.grid(row=2, column=0, pady=10, padx=10, sticky="w")
 
         details_frame = tk.Frame(product_frame, bg="#f7f7f7")
         details_frame.grid(row=0, column=1, pady=5, padx=(10, 0), sticky="nw")
@@ -170,7 +179,7 @@ class ProductInfoPage(BasePage):
             command=self.leave_review)
         leave_review_button.grid(row=1, column=0, padx=(10, 0), sticky="nw")
 
-        basket_frame = tk.Frame(product_frame, bg="#f7f7f7")
+        basket_frame = tk.Frame(product_frame, bg="#f7f7f7", width=50)
         basket_frame.grid(row=1, column=0, padx=10, pady=10, sticky="sw")
 
         add_to_basket_btn = tk.Button(
@@ -179,16 +188,18 @@ class ProductInfoPage(BasePage):
         add_to_basket_btn.grid(row=0, column=0, sticky="w")
 
         quantity_spinbox = tk.Spinbox(
-            basket_frame, from_=1, to=99, width=5, font=("Arial", 14),
-            command=lambda: setattr(self, 'quantity', self.quantity + 1))
+            basket_frame, from_=1, to=99, width=5, font=("Arial", 14), textvariable=self.quantity)
         quantity_spinbox.delete(0, "end")
         quantity_spinbox.insert(0, 1)
         quantity_spinbox.grid(row=0, column=1, padx=10, sticky="w")
 
+        self.result_label = tk.Label(product_frame, text="", font=("Arial", 14), bg="#f7f7f7", fg="#ff0000", width=20)
+        self.result_label.grid(row=1, column=1, pady=20, sticky="sw")
+
         back_button = tk.Button(
-            product_frame, text="Return", font=("Arial", 14), bg="#f7f7f7", fg="#555",
+            product_frame, text="Return", font=("Arial", 14), bg="#f7f7f7",
             command=lambda: self.navigate_to(self.pages["Products"]))
-        back_button.grid(row=1, column=2, pady=10, padx=10, sticky="se")
+        back_button.grid(row=1, column=3, pady=10, padx=5, sticky="sw")
 
         self.canvas.bind_all("<MouseWheel>", lambda event: self.scroll_canvas(event, self.canvas))
         self.canvas.bind("<Configure>", lambda event: self.update_scroll_region(event, self.canvas))
@@ -227,4 +238,9 @@ class ProductInfoPage(BasePage):
         """
         Add an item to a basket
         """
-        self.db.add_item_to_basket(self.basket["Basket_ID"], self.product["Product_ID"], self.quantity)
+        result = self.db.add_item_to_basket(
+            self.basket["Basket_ID"], self.product["Product_ID"], int(self.quantity.get()))
+        if isinstance(result, sqlite3.IntegrityError):
+            self.result_label.configure(text="Not enough stock!", fg="#555")
+        else:
+            self.result_label.configure(text="Added to basket!", fg="#1aff00")

@@ -4,6 +4,7 @@ from PIL import Image, ImageTk
 import io
 from typing import List, Dict, Any
 
+from advanced_database_project.gui.pages.checkout_page import CheckoutPage
 from advanced_database_project.backend.db_connection import DatabaseConnection
 from advanced_database_project.gui.base_page import BasePage
 
@@ -46,9 +47,7 @@ class BasketPage(BasePage):
         header_frame = tk.Frame(self, bg="#f7f7f7")
         header_frame.grid(row=1, column=0, sticky="nsew")
 
-        header_label = tk.Label(
-            header_frame, text="Your Basket", font=("Arial", 24, "bold"), bg="#f7f7f7", fg="#333"
-        )
+        header_label = tk.Label(header_frame, text="Your Basket", font=("Arial", 24, "bold"), bg="#f7f7f7", fg="#333")
         header_label.pack(pady=20)
 
         product_frame = tk.Frame(self, bg="#f7f7f7")
@@ -186,5 +185,6 @@ class BasketPage(BasePage):
         """
         Handle the checkout process.
         """
-        tk.messagebox.showinfo("Checkout", "Proceeding to checkout...")
-        # Implement checkout logic (e.g., redirect to payment page, clear basket, etc.)
+        if self.basket_items:
+            self.pages["Checkout"] = CheckoutPage(self.pages, self.db, self.user, self.basket)
+            self.navigate_to(self.pages["Checkout"])

@@ -1,12 +1,12 @@
 PRAGMA foreign_keys = ON;
 
 -- Drop tables if they exists --
+DROP TABLE IF EXISTS Orders;
 DROP TABLE IF EXISTS Billing;
 DROP TABLE IF EXISTS Shipping;
 DROP TABLE IF EXISTS Reviews;
 DROP TABLE IF EXISTS Basket_Contents;
 DROP TABLE IF EXISTS Customer_Basket;
-DROP TABLE IF EXISTS Orders;
 DROP TABLE IF EXISTS Products;
 DROP TABLE IF EXISTS Suppliers;
 DROP TABLE IF EXISTS Category;
@@ -54,22 +54,9 @@ CONSTRAINT Supplier_ID_fk FOREIGN KEY (Supplier_ID)
 REFERENCES Suppliers(Supplier_ID)
 );
 
-CREATE TABLE Orders
-(Order_ID INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT,
-Order_Date TEXT NOT NULL,
-Customer_ID INTEGER NOT NULL,
-Product_ID INTEGER NOT NULL,
-Order_Quantity INTEGER NOT NULL,
-Order_Status TEXT NOT NULL,
-CONSTRAINT Customer_ID_fk FOREIGN KEY (Customer_ID)
-REFERENCES Customers(Customer_ID)
-CONSTRAINT Product_ID_fk FOREIGN KEY (Product_ID)
-REFERENCES Products(Product_ID)
-);
-
 CREATE TABLE Billing
 (Billing_ID INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT,
-Order_ID INTEGER NOT NULL,
+Customer_ID INTEGER NOT NULL,
 Billing_Address_Street_Number INTEGER NOT NULL,
 Billing_Address_Street TEXT NOT NULL,
 Billing_Address_Postcode TEXT NOT NULL,
@@ -77,19 +64,38 @@ Card_Number TEXT NOT NULL,
 Card_Expiry TEXT NOT NULL,
 Name_on_Card TEXT NOT NULL,
 CVC TEXT NOT NULL,
-CONSTRAINT Order_ID_fk FOREIGN KEY (Order_ID)
-REFERENCES Orders(Order_ID)
+CONSTRAINT Customer_ID_fk FOREIGN KEY (Customer_ID)
+REFERENCES Customers(Customer_ID)
 );
 
 CREATE TABLE Shipping
 (Shipping_ID INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT,
-Order_ID INTEGER NOT NULL,
+Customer_ID INTEGER NOT NULL,
 Shipping_Address_Street_Number INTEGER NOT NULL,
 Shipping_Address_Street TEXT NOT NULL,
 Shipping_Address_Postcode TEXT NOT NULL,
 Delivery_Date TEXT,
-CONSTRAINT Order_ID_fk FOREIGN KEY (Order_ID)
-REFERENCES Orders(Order_ID)
+CONSTRAINT Customer_ID_fk FOREIGN KEY (Customer_ID)
+REFERENCES Customers(Customer_ID)
+);
+
+CREATE TABLE Orders
+(Order_ID INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT,
+Order_Date TEXT NOT NULL,
+Customer_ID INTEGER NOT NULL,
+Product_ID INTEGER NOT NULL,
+Shipping_ID INTEGER NOT NULL,
+Billing_ID INTEGER NOT NULL,
+Order_Quantity INTEGER NOT NULL,
+Order_Status TEXT NOT NULL,
+CONSTRAINT Customer_ID_fk FOREIGN KEY (Customer_ID)
+REFERENCES Customers(Customer_ID)
+CONSTRAINT Product_ID_fk FOREIGN KEY (Product_ID)
+REFERENCES Products(Product_ID)
+CONSTRAINT Shipping_ID_fk FOREIGN KEY (Shipping_ID)
+REFERENCES Shipping(Shipping_ID)
+CONSTRAINT Billing_ID_fk FOREIGN KEY (Billing_ID)
+REFERENCES Billing(Billing_ID)
 );
 
 CREATE TABLE Customer_Basket
@@ -201,27 +207,7 @@ INSERT INTO Products (Product_Name, Category_ID, Price, Stock_Level, Supplier_ID
 ('External Hard Drive', 16, 100, 75, 16, NULL),
 ('Gaming Chair', 17, 150, 100, 17, NULL);
 
-INSERT INTO Orders (Order_Date, Customer_ID, Product_ID, Order_Quantity, Order_Status)
-VALUES
-('2024-01-13', 1, 1, 1, 'Delivered'),
-('2024-02-15', 2, 2, 2, 'Delivered'),
-('2024-03-19', 3, 3, 1, 'Dispatched'),
-('2024-04-25', 4, 4, 1, 'Delivered'),
-('2024-05-03', 5, 5, 2, 'Delivered'),
-('2024-06-13', 6, 6, 4, 'Out for delivery'),
-('2024-07-15', 7, 7, 1, 'Delivered'),
-('2024-08-21', 8, 8, 1, 'Dispatched'),
-('2024-09-17', 9, 9, 2, 'Delivered'),
-('2024-10-02', 10, 10, 3, 'Delivered'),
-('2024-01-14', 11, 1, 1, 'Delivered'),
-('2024-02-14', 12, 11, 2, 'Delivered'),
-('2024-03-19', 13, 12, 1, 'Dispatched'),
-('2024-04-13', 14, 13, 4, 'Delivered'),
-('2024-05-22', 15, 14, 3, 'Out for delivery'),
-('2024-06-05', 16, 15, 1, 'Delivered'),
-('2024-07-27', 17, 16, 1, 'Out for delivery');
-
-INSERT INTO Shipping (Order_ID, Shipping_Address_Street_Number, Shipping_Address_Street, Shipping_Address_Postcode, Delivery_Date)
+INSERT INTO Shipping (Customer_ID, Shipping_Address_Street_Number, Shipping_Address_Street, Shipping_Address_Postcode, Delivery_Date)
 VALUES
 (1, 123, 'Main St', 'SW1A 1AA', '2024-01-13'),
 (2, 456, 'Elm St', 'M1 4FL', '2024-02-17'),
@@ -241,7 +227,7 @@ VALUES
 (16, 432, 'Maple St', 'CH1 3DP', '2024-06-10'),
 (17, 210, 'Elm St', 'NG1 6DG', NULL);
 
-INSERT INTO Billing (Order_ID, Billing_Address_Street_Number, Billing_Address_Street, Billing_Address_Postcode, Card_Number, Card_Expiry, Name_on_Card, CVC)
+INSERT INTO Billing (Customer_ID, Billing_Address_Street_Number, Billing_Address_Street, Billing_Address_Postcode, Card_Number, Card_Expiry, Name_on_Card, CVC)
 VALUES
 (1, 123, 'Main St', 'SW1A 1AA', '1234 5678 9101 1123', 'Dec-25', 'MrJohn V Doe', 123),
 (2, 456, 'Elm St', 'M1 4FL', '4321 5678 9101 1213', 'Nov-26', 'Mrs Jane G Smith', 456),
@@ -261,6 +247,26 @@ VALUES
 (16, 432, 'Maple St', 'CH1 3DP', '9999 0000 1111 2222', 'Jul-26', 'Ms Patricia R Indigo', 543),
 (17, 210, 'Elm St', 'NG1 6DG', '0000 1111 2222 3333', 'Jun-25', 'Mr Paul M Violet', 876);
 
+INSERT INTO Orders (Order_Date, Customer_ID, Product_ID, Shipping_ID, Billing_ID, Order_Quantity, Order_Status)
+VALUES
+('2024-01-13', 1, 1, 1, 1, 1, 'Delivered'),
+('2024-02-15', 2, 2, 2, 2, 2, 'Delivered'),
+('2024-03-19', 3, 3, 1, 3, 3, 'Dispatched'),
+('2024-04-25', 4, 4, 1, 4, 4, 'Delivered'),
+('2024-05-03', 5, 5, 2, 5, 5, 'Delivered'),
+('2024-06-13', 6, 6, 4, 6, 6, 'Out for delivery'),
+('2024-07-15', 7, 7, 1, 7, 7, 'Delivered'),
+('2024-08-21', 8, 8, 1, 8, 8, 'Dispatched'),
+('2024-09-17', 9, 9, 2, 9, 9, 'Delivered'),
+('2024-10-02', 10, 10, 3, 10, 10, 'Delivered'),
+('2024-01-14', 11, 1, 1, 11, 11, 'Delivered'),
+('2024-02-14', 12, 11, 2, 12, 12, 'Delivered'),
+('2024-03-19', 13, 12, 1, 13, 13, 'Dispatched'),
+('2024-04-13', 14, 13, 4, 14, 14, 'Delivered'),
+('2024-05-22', 15, 14, 3, 15, 15, 'Out for delivery'),
+('2024-06-05', 16, 15, 1, 16, 16, 'Delivered'),
+('2024-07-27', 17, 16, 1, 17, 17, 'Out for delivery');
+
 INSERT INTO Reviews (Customer_ID, Product_ID, Review_Stars, Review_Comment, Review_Date)
 VALUES
 (1, 1, 5, 'Excellent product!', '14/01/2024'),
@@ -279,25 +285,37 @@ DROP TRIGGER IF EXISTS Trigger1;
 DROP TRIGGER IF EXISTS Trigger2;
 DROP TRIGGER IF EXISTS Trigger3;
 
-
--- Check when placing an order if there is enough stock --
+-- Check when adding an item to the basket that there is enough stock --
 CREATE TRIGGER Trigger1
-BEFORE INSERT ON Orders
+BEFORE INSERT ON Basket_Contents
 FOR EACH ROW
 BEGIN
     SELECT CASE
-        WHEN (SELECT Stock_Level FROM Products WHERE Product_ID = NEW.Product_ID) < NEW.Order_Quantity
-        THEN RAISE(ABORT, 'Not enough stock available for the product')
+        WHEN (SELECT Stock_Level
+              FROM Products
+              WHERE Product_ID = NEW.Product_ID) <
+             (NEW.Quantity +
+              IFNULL((SELECT SUM(Quantity)
+                      FROM Basket_Contents
+                      WHERE Basket_ID = NEW.Basket_ID AND Product_ID = NEW.Product_ID), 0))
+        THEN RAISE(ABORT, 'Not enough stock available to add this quantity to the basket.')
     END;
 END;
 
 -- Check when adding an item to the basket that there is enough stock --
 CREATE TRIGGER Trigger2
-BEFORE INSERT ON Basket_Contents
+BEFORE UPDATE ON Basket_Contents
 FOR EACH ROW
 BEGIN
     SELECT CASE
-        WHEN (SELECT Stock_Level FROM Products WHERE Product_ID = NEW.Product_ID) < NEW.Quantity
+        WHEN (SELECT Stock_Level
+              FROM Products
+              WHERE Product_ID = NEW.Product_ID) <
+             (NEW.Quantity +
+              IFNULL((SELECT SUM(Quantity)
+                      FROM Basket_Contents
+                      WHERE Basket_ID = NEW.Basket_ID AND Product_ID = NEW.Product_ID), 0)
+              - OLD.Quantity)
         THEN RAISE(ABORT, 'Not enough stock available to add this quantity to the basket.')
     END;
 END;
@@ -313,37 +331,33 @@ BEGIN
 END;
 
 -- Create Views --
-DROP View IF EXISTS TotalOrderCost;
+DROP View IF EXISTS BestSellingProducts;
 DROP View IF EXISTS CustomerBasketValue;
 
-
-CREATE VIEW TotalOrderCost AS
+CREATE VIEW BestSellingProducts AS
 SELECT 
-    Orders.Order_ID,
-    Customers.Customer_Firstname || ' ' || Customers.Customer_Surname AS Customer_Name,
+    Products.Product_ID,
     Products.Product_Name,
-    Orders.Order_Quantity,
+    Products.Category_ID,
     Products.Price,
-    (Orders.Order_Quantity * Products.Price) AS Total_Cost
-FROM 
-    Orders
-JOIN 
-    Customers ON Orders.Customer_ID = Customers.Customer_ID
-JOIN 
-    Products ON Orders.Product_ID = Products.Product_ID;
+    Products.Stock_Level,
+    Products.Supplier_ID,
+    Products.Product_Image,
+SUM(Orders.Order_Quantity) AS Total_Ordered
+FROM Orders
+JOIN Products ON Orders.Product_ID = Products.Product_ID
+GROUP BY Products.Product_ID
+HAVING  Total_Ordered > 0
+ORDER BY Total_Ordered DESC
+LIMIT 6;
     
 CREATE VIEW CustomerBasketValue AS
 SELECT 
     Customer_Basket.Basket_ID,
     Customers.Customer_Firstname || ' ' || Customers.Customer_Surname AS Customer_Name,
     SUM(Products.Price * Basket_Contents.Quantity) AS Total_Basket_Value
-FROM 
-    Customer_Basket
-JOIN 
-    Customers ON Customer_Basket.Customer_ID = Customers.Customer_ID
-JOIN 
-    Basket_Contents ON Customer_Basket.Basket_ID = Basket_Contents.Basket_ID
-JOIN 
-    Products ON Basket_Contents.Product_ID = Products.Product_ID
-GROUP BY 
-    Customer_Basket.Basket_ID;
+FROM Customer_Basket
+JOIN Customers ON Customer_Basket.Customer_ID = Customers.Customer_ID
+JOIN Basket_Contents ON Customer_Basket.Basket_ID = Basket_Contents.Basket_ID
+JOIN Products ON Basket_Contents.Product_ID = Products.Product_ID
+GROUP BY Customer_Basket.Basket_ID;

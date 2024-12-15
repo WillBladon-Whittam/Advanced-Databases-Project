@@ -122,6 +122,26 @@ class BasePage(tk.Frame, ABC):
         canvas.update_idletasks()
         canvas.configure(scrollregion=canvas.bbox("all"))
 
+    @staticmethod
+    def validate_field(value: str, entry_widget: tk.Entry) -> bool:
+        """
+        Validates a field and updates its Entry based on whether it is filled.
+
+        Args:
+            value (str): The value to check that isn't empty
+            entry_widget (tk.Entry): The tkitner widget that needs updating
+
+        Returns:
+            True: If the Entry Widget provided does have a value
+            False: If the Entry Widget provided does not have a value
+        """
+        if not value:
+            entry_widget.config(highlightbackground="red", highlightcolor="red", highlightthickness=1)
+            return False
+        else:
+            entry_widget.config(highlightthickness=0)
+            return True
+
     @abstractmethod
     def create_widgets(self) -> None:
         """

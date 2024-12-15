@@ -1,3 +1,5 @@
+import sqlite3
+
 from advanced_database_project.backend.sql import SqlWrapper
 
 import hashlib
@@ -16,8 +18,8 @@ class DatabaseConnection(SqlWrapper):
         super().__init__(db)
 
         # Hard code the tables. This stops SQL injection attacks if these are pre-defined
-        self.tables = ["Customers", "Category", "Suppliers", "Products", "Orders",
-                       "Billing", "Shipping", "Customer_Basket", "Basket_Contents", "Reviews"]
+        self.tables = ["Customers", "Category", "Suppliers", "Products", "Customer_Basket", "Basket_Contents",
+                       "Reviews", "Shipping", "Billing", "Orders"]
 
     def clear_database(self) -> List[None | Exception]:
         """
@@ -309,7 +311,9 @@ class DatabaseConnection(SqlWrapper):
         basket_items = self.get_basket_items_by_basket_id(basket_id)
         for item in basket_items:
             if item["Product_ID"] == product_id:
-                self.update_basket_item(basket_id, product_id, quantity + int(item["Quantity"]))
+                result = self.update_basket_item(basket_id, product_id, quantity + int(item["Quantity"]))
+                if isinstance(result, sqlite3.IntegrityError):
+                    return result
                 return
         return self.update_table(f"""INSERT INTO Basket_Contents (Basket_ID, Product_ID, Quantity) VALUES (?, ?, ?)""",
                                  sql_parameters=(basket_id, product_id, quantity))
@@ -356,6 +360,21 @@ class DatabaseConnection(SqlWrapper):
         return self.update_table("""
                                  DELETE FROM Basket_Contents WHERE Basket_ID = ? AND Product_ID = ?
                                  """, sql_parameters=(basket_id, product_id))
+
+    def clear_basket(self, basket_id: int) -> Exception | None:
+        """
+        Clear a baskets contents
+
+        Args:
+            basket_id (int): The Basket to remove the contents for
+
+        Returns:
+            None: If the SQL Query is successful
+            Exception: If the SQL Query fails
+        """
+        return self.update_table("""
+                                 DELETE FROM Basket_Contents WHERE Basket_ID = ?
+                                 """, sql_parameters=basket_id)
 
     def update_basket_item(self, basket_id: int, product_id: int, quantity: int) -> Exception | None:
         """
@@ -490,23 +509,7 @@ class DatabaseConnection(SqlWrapper):
             List[Dict[str, Any]]: Returns a List of dicts of all the results found.
                                   List will be empty if nothing is found.
         """
-        return self.select_query("""
-                                 SELECT 
-                                    Products.Product_ID,
-                                    Products.Product_Name,
-                                    Products.Category_ID,
-                                    Products.Price,
-                                    Products.Stock_Level,
-                                    Products.Supplier_ID,
-                                    Products.Product_Image,
-                                 SUM(Orders.Order_Quantity) AS Total_Ordered
-                                 FROM Orders
-                                 JOIN Products ON Orders.Product_ID = Products.Product_ID
-                                 GROUP BY Products.Product_ID
-                                 HAVING  Total_Ordered > 0
-                                 ORDER BY Total_Ordered DESC
-                                 LIMIT 6
-                                 """)
+        return self.select_query("""SELECT * FROM BestSellingProducts""")
 
     def insert_customer(self, firstname: str,
                         surname: str,
@@ -604,6 +607,82 @@ class DatabaseConnection(SqlWrapper):
         # Execute the query
         return self.update_table(query, sql_parameters=tuple(parameters))
 
+    def create_shipping(self, customer_id: int, shipping_address_street_number: str, shipping_address_street: str,
+                        shipping_address_postcode: str, delivery_date: str):
+        """
+        Create shipping information for a specific order
+
+        Args:
+            customer_id (int): The customer ID for whom the shipping information is for
+            shipping_address_street_number (str): The street shipping to ship to
+            shipping_address_street (str): The address to ship to
+            shipping_address_postcode (str): The postcode to ship to
+            delivery_date: (str) The delivery date the order is due to be delivered
+
+        Returns:
+            Exception: Returns the SQLite exception if there is an error.
+            None: Returns None of the insertion was successful
+        """
+        return self.update_table("""
+                                 INSERT INTO Shipping (Customer_ID, Shipping_Address_Street_Number, 
+                                                       Shipping_Address_Street,  Shipping_Address_Postcode, 
+                                                       Delivery_Date) 
+                                 VALUES (?, ?, ?, ?, ?)
+                                 """, sql_parameters=(customer_id, shipping_address_street_number, shipping_address_street,
+                                                      shipping_address_postcode, delivery_date))
+
+    def create_billing(self, customer_id: int, billing_address_street_number: str, billing_address_street: str,
+                       billing_address_postcode: str, card_number: str, card_expiry: str, name_on_card: str, cvc: str):
+        """
+        Create billing information for a specific order
+
+        Args:
+            customer_id (int): The customer ID for whom the billing information is for
+            billing_address_street_number (str): The street number to bill to
+            billing_address_street (str):  The street to bill to
+            billing_address_postcode: (str) The postcode to bill to
+            card_number (str): The card number
+            card_expiry (str): the card expiry
+            name_on_card (str): The name on the card
+            cvc (str): The CVC of the card
+
+        Returns:
+            Exception: Returns the SQLite exception if there is an error.
+            None: Returns None of the insertion was successful
+        """
+        return self.update_table("""
+                                 INSERT INTO Billing (Customer_ID, Billing_Address_Street_Number, Billing_Address_Street, 
+                                                      Billing_Address_Postcode, Card_Number, Card_Expiry, Name_on_Card, 
+                                                      CVC) 
+                                                      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                                 """, sql_parameters=(customer_id, billing_address_street_number,
+                                                      billing_address_street, billing_address_postcode, card_number,
+                                                      card_expiry, name_on_card, cvc))
+
+    def place_order(self, order_date: str, customer_id: int, product_id: int, shipping_id: int, billing_id: int,
+                    order_quantity: int, order_status: str) -> Exception | None:
+        """
+        Place an order for a product
+
+        Args:
+            order_date (str): The date the product was ordered
+            customer_id (int): The Customer ID that placed the order
+            product_id (int): The Product ID that the customer has ordered
+            shipping_id (int): The Shipping ID of the order
+            billing_id (int): The Billing ID of the order
+            order_quantity (str): The quantity of the product that the customer has ordered
+            order_status (str): The current status of the order (Delivered, Dispatched, Out for Delivery, Ordered)
+
+        Returns:
+            Exception: Returns the SQLite exception if there is an error.
+            None: Returns None of the insertion was successful
+        """
+        return self.update_table("""
+                                 INSERT INTO Orders (Order_Date, Customer_ID, Product_ID, Shipping_ID, Billing_ID, 
+                                                     Order_Quantity, Order_Status) 
+                                 VALUES (?, ?, ?, ?, ?, ?, ?)
+                                 """, sql_parameters=(order_date, customer_id, product_id, shipping_id, billing_id,
+                                                      order_quantity, order_status))
 
 if __name__ == "__main__":
     connection = DatabaseConnection()

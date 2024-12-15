@@ -22,6 +22,14 @@ class HomePage(BasePage):
 
         self.create_widgets()
 
+    def show(self) -> None:
+        """
+        Override the default show function from BasePage - check the top-selling products
+        """
+        self.top_products = self.db.select_best_selling_products()
+        self.refresh_page()
+        self.pack()
+
     def create_widgets(self) -> None:
         self.create_welcome()
         self.create_featured_products()
