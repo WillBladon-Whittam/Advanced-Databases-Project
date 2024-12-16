@@ -763,6 +763,58 @@ class DatabaseConnection(SqlWrapper):
                                  """, sql_parameters=(order_date, customer_id, product_id, shipping_id, billing_id,
                                                       order_quantity, order_status))
 
+    def get_orders_by_customer_id(self, customer_id: int) -> List[Dict[str, Any]]:
+        """
+        Get all the order from a customer
+
+        Args:
+            customer_id (int): The Customer ID that placed the order
+
+        Returns:
+            List[Dict[str, Any]]: Returns a List of dicts of all the results found.
+                                  List will be empty if nothing is found.
+        """
+        return self.select_query("""
+                                 SELECT
+                                    o.Order_ID,
+                                    o.Order_Date,
+                                    o.Customer_ID,
+                                    p.Product_Name,
+                                    o.Shipping_ID,
+                                    o.Billing_ID,
+                                    o.Order_Quantity,
+                                    o.Order_Status
+                                 FROM Orders as o
+                                 INNER JOIN products p ON p.Product_ID = o.Product_ID
+                                 WHERE o.Customer_ID = ? 
+                                 """, sql_parameters=customer_id)
+
+    def get_order_by_order_id(self, order_id: int) -> List[Dict[str, Any]]:
+        """
+        Get the order from the Order ID
+
+        Args:
+            order_id (int): The Order ID of the order
+
+        Returns:
+            List[Dict[str, Any]]: Returns a List of dicts of all the results found.
+                                  List will be empty if nothing is found.
+        """
+        return self.select_query("""
+                                 SELECT
+                                    o.Order_ID,
+                                    o.Order_Date,
+                                    o.Customer_ID,
+                                    p.Product_Name,
+                                    o.Shipping_ID,
+                                    o.Billing_ID,
+                                    o.Order_Quantity,
+                                    o.Order_Status
+                                 FROM Orders as o
+                                 INNER JOIN products p ON p.Product_ID = o.Product_ID
+                                 WHERE o.Order_ID = ? 
+                                 """, sql_parameters=order_id, fetch='one')
+
 if __name__ == "__main__":
     connection = DatabaseConnection()
     products = connection.select_products()

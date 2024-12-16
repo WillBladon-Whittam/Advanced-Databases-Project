@@ -3,6 +3,9 @@ from tkinter import ttk
 from PIL import Image, ImageTk
 import io
 from typing import List, Dict, Any
+import matplotlib.pyplot as plt
+import numpy as np
+import re
 
 from advanced_database_project.gui.pages.checkout_page import CheckoutPage
 from advanced_database_project.backend.db_connection import DatabaseConnection
@@ -22,7 +25,10 @@ class BasketPage(BasePage):
         self.configure(bg="#f7f7f7")
 
         self.basket_items = []
+        self.orders = []
         self.total_price = 0
+
+        self.orders_var = tk.StringVar()
 
         self.canvas = None
 
@@ -33,6 +39,7 @@ class BasketPage(BasePage):
         Override the default show function from BasePage - requery the database for new items in basket
         """
         self.basket_items = self.db.get_basket_items_by_basket_id(self.basket["Basket_ID"])
+        self.orders = self.db.get_orders_by_customer_id(self.user["Customer_ID"])
         self.total_price = self.calculate_total_price()
         self.refresh_page()
         self.update_scroll_region(None, self.canvas)
@@ -76,6 +83,20 @@ class BasketPage(BasePage):
             footer_frame, text="Checkout", font=("Arial", 14), bg="#007bff", fg="#fff",
             activebackground="#0056b3", activeforeground="#fff", command=self.checkout)
         checkout_button.pack(side="right")
+
+        orders_frame = tk.Frame(self, bg="#f7f7f7")
+        orders_frame.grid(row=3, column=0, pady=20, padx=10, sticky="sw")
+
+        orders_button = tk.Button(
+            orders_frame, text="Track Order", font=("Arial", 14), bg="#007bff", fg="#fff",
+            activebackground="#0056b3", activeforeground="#fff", command=self.track_order)
+        orders_button.pack(side="left", padx=5)
+
+        selected_orders_dropdown = ttk.Combobox(
+            orders_frame, font=("Arial", 10), textvariable=self.orders_var, width=40,
+            values=[f"Order ID {order["Order_ID"]} - {order["Order_Quantity"]} {order["Product_Name"]}" for order in self.orders],
+            state="readonly")
+        selected_orders_dropdown.pack(side="left", padx=5)
 
     def create_product_card(self, parent: tk.Frame, item: Dict[str, Any]) -> None:
         """
@@ -176,7 +197,7 @@ class BasketPage(BasePage):
         Args:
             item (Dict[str, Any]): The product information of the item that was removed
         """
-        self.db.remove_basket_item(self.basket["Basket_ID"], item["Product_ID"])
+        self.db.remove_basket_item(self.basket["Basket_ID"], item["Product_ID"])6a
         self.basket_items = self.db.get_basket_items_by_basket_id(self.basket["Basket_ID"])
         self.total_price = self.calculate_total_price()
         self.refresh_page()
@@ -188,3 +209,48 @@ class BasketPage(BasePage):
         if self.basket_items:
             self.pages["Checkout"] = CheckoutPage(self.pages, self.db, self.user, self.basket)
             self.navigate_to(self.pages["Checkout"])
+
+    def track_order(self):
+        if self.orders_var.get():
+            selected_order_id = int(re.search(r"Order ID (\d+)", self.orders_var.get()).group(1))
+            selected_order = self.db.get_order_by_order_id(selected_order_id)
+
+            stages = {
+                "Ordered": 0,
+                "Dispatched": 1,
+                "Out for delivery": 2,
+                "Delivered": 3
+            }
+
+            completed_until = stages[selected_order["Order_Status"]]
+            completion_status = [1 if i <= completed_until else 0 for i in range(len(stages))]
+
+            x_positions = np.arange(len(stages))
+
+            plt.figure(figsize=(10, 4))
+            plt.bar(
+                x_positions,
+                [1] * len(stages),
+                color=['green' if status else 'lightgray' for status in completion_status],
+                edgecolor='black',
+                width=0.6
+            )
+
+            for i, stage in enumerate(stages):
+                color = 'white' if completion_status[i] else 'black'
+                plt.text(i, 0.5, stage, ha='center', va='center', color=color, fontsize=10)
+
+            plt.scatter([x_positions[completed_until]], [1.2], color='red', zorder=5, label="Current Stage")
+            plt.text(x_positions[completed_until], 1.4, selected_order["Order_Status"], ha='center', color='red', fontsize=12)
+
+            plt.text(x_positions[0], -0.4, f"Time: {selected_order["Order_Date"]}", ha='center', color='blue', fontsize=10)
+
+            plt.xticks(x_positions, [])
+            plt.yticks([])
+            plt.title(f"Order Tracking Timeline - Order ID {selected_order_id}", fontsize=14, pad=20)
+            plt.ylim(-0.6, 2)
+            plt.axhline(y=0, color='black', linewidth=0.8)  # Baseline
+            plt.legend(loc='upper left', fontsize=10)
+
+            plt.tight_layout()
+            plt.show()
