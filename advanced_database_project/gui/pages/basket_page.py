@@ -121,7 +121,7 @@ class BasketPage(BasePage):
         quantity_label = tk.Label(product_card, text="Quantity:", font=("Arial", 12), bg="#fff", fg="#333")
         quantity_label.grid(row=0, column=3, sticky="e", padx=(10, 5))
 
-        quantity_spinbox = tk.Spinbox(product_card, from_=0, to=99, width=5, font=("Arial", 12), justify="center")
+        quantity_spinbox = tk.Spinbox(product_card, from_=0, to=9999, width=5, font=("Arial", 12), justify="center")
         quantity_spinbox.config(
             command=lambda item=item, spinbox=quantity_spinbox: self.update_quantity(item, spinbox)
         )

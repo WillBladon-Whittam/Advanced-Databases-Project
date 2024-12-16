@@ -314,8 +314,7 @@ BEGIN
              (NEW.Quantity +
               IFNULL((SELECT SUM(Quantity)
                       FROM Basket_Contents
-                      WHERE Basket_ID = NEW.Basket_ID AND Product_ID = NEW.Product_ID), 0)
-              - OLD.Quantity)
+                      WHERE Basket_ID = NEW.Basket_ID AND Product_ID = NEW.Product_ID), 0) - OLD.Quantity)
         THEN RAISE(ABORT, 'Not enough stock available to add this quantity to the basket.')
     END;
 END;
@@ -336,28 +335,28 @@ DROP View IF EXISTS CustomerBasketValue;
 
 CREATE VIEW BestSellingProducts AS
 SELECT 
-    Products.Product_ID,
-    Products.Product_Name,
-    Products.Category_ID,
-    Products.Price,
-    Products.Stock_Level,
-    Products.Supplier_ID,
-    Products.Product_Image,
-SUM(Orders.Order_Quantity) AS Total_Ordered
-FROM Orders
-JOIN Products ON Orders.Product_ID = Products.Product_ID
-GROUP BY Products.Product_ID
+    p.Product_ID AS Product_ID,
+    p.Product_Name AS Product_Name,
+    p.Category_ID AS Category_ID,
+    p.Price AS Price,
+    p.Stock_Level AS Stock_Level,
+    p.Supplier_ID AS Supplier_ID,
+    p.Product_Image AS Product_Image,
+SUM(o.Order_Quantity) AS Total_Ordered
+FROM Orders AS o
+INNER JOIN Products AS p ON o.Product_ID = p.Product_ID
+GROUP BY p.Product_ID
 HAVING  Total_Ordered > 0
 ORDER BY Total_Ordered DESC
 LIMIT 6;
     
 CREATE VIEW CustomerBasketValue AS
 SELECT 
-    Customer_Basket.Basket_ID,
-    Customers.Customer_Firstname || ' ' || Customers.Customer_Surname AS Customer_Name,
-    SUM(Products.Price * Basket_Contents.Quantity) AS Total_Basket_Value
-FROM Customer_Basket
-JOIN Customers ON Customer_Basket.Customer_ID = Customers.Customer_ID
-JOIN Basket_Contents ON Customer_Basket.Basket_ID = Basket_Contents.Basket_ID
-JOIN Products ON Basket_Contents.Product_ID = Products.Product_ID
-GROUP BY Customer_Basket.Basket_ID;
+    cb.Basket_ID AS Basket_ID,
+    c.Customer_ID AS Customer_ID,
+    SUM(p.Price * bc.Quantity) AS Total_Basket_Value
+FROM Customer_Basket AS cb
+INNER JOIN Customers AS c ON cb.Customer_ID = c.Customer_ID
+INNER JOIN Basket_Contents AS bc ON cb.Basket_ID = bc.Basket_ID
+INNER JOIN Products AS p ON bc.Product_ID = p.Product_ID
+GROUP BY cb.Basket_ID;

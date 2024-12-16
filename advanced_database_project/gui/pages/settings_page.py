@@ -153,6 +153,6 @@ class SettingsPage(BasePage):
         Restart the application, close down the current python process and reopen a new one
         """
         python = sys.executable
-        args = sys.argv
+        args = [sys.argv[0]]
         subprocess.Popen([python] + args)
         sys.exit()

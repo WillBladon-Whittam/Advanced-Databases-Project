@@ -39,6 +39,7 @@ class ProductInfoPage(BasePage):
         Override the default show function from BasePage - rebind the scrollwheel to the scrollable canvas
         """
         self.product = self.db.select_products(self.product["Product_Name"])[0]
+        self.stars = []
         self.refresh_page()
         self.update_scroll_region(None, self.canvas)
         self.canvas.bind_all("<MouseWheel>", lambda event: self.scroll_canvas(event, self.canvas))
@@ -188,7 +189,7 @@ class ProductInfoPage(BasePage):
         add_to_basket_btn.grid(row=0, column=0, sticky="w")
 
         quantity_spinbox = tk.Spinbox(
-            basket_frame, from_=1, to=99, width=5, font=("Arial", 14), textvariable=self.quantity)
+            basket_frame, from_=1, to=9999, width=5, font=("Arial", 14), textvariable=self.quantity)
         quantity_spinbox.delete(0, "end")
         quantity_spinbox.insert(0, 1)
         quantity_spinbox.grid(row=0, column=1, padx=10, sticky="w")
@@ -231,7 +232,6 @@ class ProductInfoPage(BasePage):
                            self.review_text.get("1.0", "end-1c"), datetime.now().strftime("%d/%m/%Y"))
         self.stars = []
         self.refresh_page()
-        self.create_widgets()
         self.rating = None
 
     def add_to_basket(self) -> None:

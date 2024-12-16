@@ -40,7 +40,7 @@ class DatabaseConnection(SqlWrapper):
         Check all the tables exists in the database
 
         Returns:
-            bool: Returns True if all the expected tables are presnet
+            bool: Returns True if all the expected tables are present
                   Returns False if there are any missing tables in the database
         """
         results = []
@@ -165,8 +165,6 @@ class DatabaseConnection(SqlWrapper):
                 values_str = ', '.join(values_str)
                 self.update_table(f"INSERT INTO {table_name} ({columns_str}) VALUES ({values_str})")
 
-        self.db.commit()
-
     def insert_image(self, image_path: Path) -> None | Exception:
         """
         Insert an Image into the products table.
@@ -184,8 +182,11 @@ class DatabaseConnection(SqlWrapper):
         with open(image_path, 'rb') as img_file:
             binary_data = img_file.read()
 
-        return self.update_table("UPDATE Products SET Product_Image = ? WHERE Product_Name = ?",
-                                 sql_parameters=(binary_data, image_path.stem))
+        return self.update_table("""
+                                 UPDATE Products 
+                                 SET Product_Image = ? 
+                                 WHERE Product_Name = ?
+                                 """, sql_parameters=(binary_data, image_path.stem))
 
     def get_customer_by_login(self, username: str, password: str) -> Dict[str, Any] | False | None:
         """
@@ -210,7 +211,14 @@ class DatabaseConnection(SqlWrapper):
         if password_hash:
             if password_hash["Customer_Password"].hex() == hashlib.sha256(password.encode()).hexdigest():
                 return self.select_query("""
-                                         SELECT * 
+                                         SELECT 
+                                            Customer_ID,
+                                            Customer_Firstname,
+                                            Customer_Surname,
+                                            Customer_Gender,
+                                            Customer_Email,
+                                            Customer_Username,
+                                            Customer_Password
                                          FROM Customers 
                                          WHERE Customer_Username = ?
                                          """, sql_parameters=username, fetch="one")
@@ -252,7 +260,15 @@ class DatabaseConnection(SqlWrapper):
         sort_order = "ASC" if sort_order.upper() == "ASC" else "DESC"
 
         return self.select_query(f"""
-                                 SELECT * FROM products as p
+                                 SELECT
+                                     p.Product_ID,
+                                     p.Product_Name,
+                                     p.Category_ID,
+                                     p.Price,
+                                     p.Stock_Level,
+                                     p.Supplier_ID,
+                                     p.Product_Image
+                                 FROM products as p
                                  INNER JOIN category c ON p.Category_ID = c.Category_ID
                                  WHERE p.Product_Name LIKE ? AND
                                        c.Category_Name LIKE ? AND
@@ -276,7 +292,13 @@ class DatabaseConnection(SqlWrapper):
              Dict[str, Any]: Returns a dict of the customers basket
             None: If no customer basket is found with that Customer ID
         """
-        return self.select_query(f"""SELECT * FROM Customer_Basket WHERE Customer_ID = ?""",
+        return self.select_query("""
+                                 SELECT 
+                                    Basket_ID,
+                                    Customer_ID
+                                 FROM Customer_Basket 
+                                 WHERE Customer_ID = ?
+                                 """,
                                  sql_parameters=customer_id,
                                  fetch='one')
 
@@ -292,8 +314,10 @@ class DatabaseConnection(SqlWrapper):
             None: If the SQL Query is successful
             Exception: If the SQL Query fails
         """
-        return self.update_table(f"""INSERT INTO Customer_Basket (Customer_ID, Basket_Created_Date) VALUES (?, ?)""",
-                                 sql_parameters=(customer_id, date))
+        return self.update_table("""
+                                 INSERT INTO Customer_Basket (Customer_ID, Basket_Created_Date) 
+                                 VALUES (?, ?)
+                                 """, sql_parameters=(customer_id, date))
 
     def add_item_to_basket(self, basket_id: int, product_id: int, quantity: int) -> Exception | None:
         """
@@ -315,8 +339,10 @@ class DatabaseConnection(SqlWrapper):
                 if isinstance(result, sqlite3.IntegrityError):
                     return result
                 return
-        return self.update_table(f"""INSERT INTO Basket_Contents (Basket_ID, Product_ID, Quantity) VALUES (?, ?, ?)""",
-                                 sql_parameters=(basket_id, product_id, quantity))
+        return self.update_table("""
+                                 INSERT INTO Basket_Contents (Basket_ID, Product_ID, Quantity) 
+                                 VALUES (?, ?, ?)
+                                 """, sql_parameters=(basket_id, product_id, quantity))
 
     def get_basket_items_by_basket_id(self, basket_id: int) -> List[Dict[str, Any]]:
         """
@@ -337,12 +363,9 @@ class DatabaseConnection(SqlWrapper):
                                     P.Product_Image,
                                     bc.Quantity,
                                     (p.Price * bc.Quantity) AS Total_Cost
-                                 FROM 
-                                    Basket_Contents AS bc
-                                 JOIN 
-                                    Products AS p ON bc.Product_ID = p.Product_ID
-                                 WHERE 
-                                    bc.Basket_ID = ?
+                                 FROM Basket_Contents AS bc
+                                 INNER JOIN Products AS p ON bc.Product_ID = p.Product_ID
+                                 WHERE bc.Basket_ID = ?
                                  """, sql_parameters=basket_id)
 
     def remove_basket_item(self, basket_id: int, product_id: int) -> Exception | None:
@@ -358,7 +381,8 @@ class DatabaseConnection(SqlWrapper):
             Exception: If the SQL Query fails
         """
         return self.update_table("""
-                                 DELETE FROM Basket_Contents WHERE Basket_ID = ? AND Product_ID = ?
+                                 DELETE FROM Basket_Contents 
+                                 WHERE Basket_ID = ? AND Product_ID = ?
                                  """, sql_parameters=(basket_id, product_id))
 
     def clear_basket(self, basket_id: int) -> Exception | None:
@@ -372,9 +396,7 @@ class DatabaseConnection(SqlWrapper):
             None: If the SQL Query is successful
             Exception: If the SQL Query fails
         """
-        return self.update_table("""
-                                 DELETE FROM Basket_Contents WHERE Basket_ID = ?
-                                 """, sql_parameters=basket_id)
+        return self.update_table("""DELETE FROM Basket_Contents WHERE Basket_ID = ? """, sql_parameters=basket_id)
 
     def update_basket_item(self, basket_id: int, product_id: int, quantity: int) -> Exception | None:
         """
@@ -409,7 +431,11 @@ class DatabaseConnection(SqlWrapper):
             None: If no customer basket is found with that Customer ID
         """
         return self.select_query("""
-                                 SELECT * FROM CustomerBasketValue WHERE Basket_ID = ?
+                                 SELECT 
+                                    Basket_ID,
+                                    Customer_ID,
+                                    Total_Basket_Value
+                                 FROM CustomerBasketValue WHERE Basket_ID = ?
                                  """, sql_parameters=basket_id, fetch='one')
 
     def select_categories(self) -> List[Dict[str, Any]]:
@@ -420,7 +446,12 @@ class DatabaseConnection(SqlWrapper):
             List[Dict[str, Any]]: Returns a List of dicts of all the results found.
                                   List will be empty if nothing is found.
         """
-        return self.select_query(f"""SELECT * FROM category""")
+        return self.select_query("""
+                                 SELECT 
+                                    Category_ID,
+                                    Category_Name
+                                 FROM category
+                                 """)
 
     def select_customer_by_id(self, customer_id: int) -> Dict[str, Any] | None:
         """
@@ -433,8 +464,18 @@ class DatabaseConnection(SqlWrapper):
             Dict[str, Any]: Returns a dict of the customer
             None: If no customer is found with that Customer ID
         """
-        return self.select_query(f"""SELECT * FROM Customers WHERE Customer_ID = ?""", sql_parameters=customer_id,
-                                 fetch='one')
+        return self.select_query("""
+                                 SELECT 
+                                    Customer_ID,
+                                    Customer_Firstname,
+                                    Customer_Surname,
+                                    Customer_Gender,
+                                    Customer_Email,
+                                    Customer_Username,
+                                    Customer_Password
+                                 FROM Customers 
+                                 WHERE Customer_ID = ?
+                                 """, sql_parameters=customer_id, fetch='one')
 
     def select_categories_by_id(self, category_id: int) -> Dict[str, Any] | None:
         """
@@ -447,8 +488,13 @@ class DatabaseConnection(SqlWrapper):
             Dict[str, Any]: Returns a dict of categories
             None: If no categories is found with that Category ID
         """
-        return self.select_query(f"""SELECT * FROM category WHERE Category_ID = ?""", sql_parameters=category_id,
-                                 fetch='one')
+        return self.select_query("""
+                                 SELECT 
+                                    Category_ID,
+                                    Category_Name
+                                 FROM category 
+                                 WHERE Category_ID = ?
+                                 """, sql_parameters=category_id, fetch='one')
 
     def select_suppliers_by_id(self, supplier_id: int) -> Dict[str, Any] | None:
         """
@@ -461,8 +507,18 @@ class DatabaseConnection(SqlWrapper):
             Dict[str, Any]: Returns a dict of suppliers
             None: If no suppliers are found with that Supplier ID
         """
-        return self.select_query(f"""SELECT * FROM Suppliers WHERE Supplier_ID = ?""", sql_parameters=supplier_id,
-                                 fetch='one')
+        return self.select_query("""
+                                 SELECT 
+                                    Supplier_ID,
+                                    Supplier_Name,
+                                    Supplier_Email,
+                                    Supplier_Phone,
+                                    Supplier_HQ_Street_Number,
+                                    Supplier_HQ_Street,
+                                    Supplier_HQ_Postcode
+                                 FROM Suppliers 
+                                 WHERE Supplier_ID = ?
+                                 """, sql_parameters=supplier_id, fetch='one')
 
     def select_reviews_by_product_id(self, product_id: int) -> List[Dict[str, Any]]:
         """
@@ -475,7 +531,17 @@ class DatabaseConnection(SqlWrapper):
             List[Dict[str, Any]]: Returns a List of dicts of all the results found.
                                   List will be empty if nothing is found.
         """
-        return self.select_query(f"""SELECT * FROM Reviews WHERE Product_ID = ?""", sql_parameters=product_id)
+        return self.select_query("""
+                                 SELECT 
+                                    Review_ID,
+                                    Customer_ID,
+                                    Product_ID,
+                                    Review_Stars,
+                                    Review_Comment,
+                                    Review_Date
+                                 FROM Reviews 
+                                 WHERE Product_ID = ?
+                                 """, sql_parameters=product_id)
 
     def add_review(self, customer_id: int, product_id: int, review_stars: int, review_comment: str,
                    review_date: str) -> None | Exception:
@@ -509,7 +575,17 @@ class DatabaseConnection(SqlWrapper):
             List[Dict[str, Any]]: Returns a List of dicts of all the results found.
                                   List will be empty if nothing is found.
         """
-        return self.select_query("""SELECT * FROM BestSellingProducts""")
+        return self.select_query("""
+                                 SELECT 
+                                    Product_ID,
+                                    Product_Name,
+                                    Category_ID,
+                                    Price,
+                                    Stock_Level,
+                                    Supplier_ID,
+                                    Product_Image
+                                 FROM BestSellingProducts
+                                 """)
 
     def insert_customer(self, firstname: str,
                         surname: str,
@@ -534,7 +610,9 @@ class DatabaseConnection(SqlWrapper):
             None: Returns None of the insertion was successful
         """
         return self.update_table("""
-                                 INSERT INTO Customers (Customer_Firstname, Customer_Surname, Customer_Gender, Customer_Email, Customer_Username, Customer_Password) 
+                                 INSERT INTO Customers 
+                                 (Customer_Firstname, Customer_Surname, Customer_Gender, 
+                                 Customer_Email, Customer_Username, Customer_Password) 
                                  VALUES (?, ?, ?, ?, ?, ?)
                                  """, sql_parameters=(
             firstname, surname, gender, email, username, hashlib.sha256(password.encode()).digest()))
@@ -628,8 +706,9 @@ class DatabaseConnection(SqlWrapper):
                                                        Shipping_Address_Street,  Shipping_Address_Postcode, 
                                                        Delivery_Date) 
                                  VALUES (?, ?, ?, ?, ?)
-                                 """, sql_parameters=(customer_id, shipping_address_street_number, shipping_address_street,
-                                                      shipping_address_postcode, delivery_date))
+                                 """, sql_parameters=(customer_id, shipping_address_street_number,
+                                                      shipping_address_street, shipping_address_postcode,
+                                                      delivery_date))
 
     def create_billing(self, customer_id: int, billing_address_street_number: str, billing_address_street: str,
                        billing_address_postcode: str, card_number: str, card_expiry: str, name_on_card: str, cvc: str):
@@ -654,7 +733,7 @@ class DatabaseConnection(SqlWrapper):
                                  INSERT INTO Billing (Customer_ID, Billing_Address_Street_Number, Billing_Address_Street, 
                                                       Billing_Address_Postcode, Card_Number, Card_Expiry, Name_on_Card, 
                                                       CVC) 
-                                                      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                                  """, sql_parameters=(customer_id, billing_address_street_number,
                                                       billing_address_street, billing_address_postcode, card_number,
                                                       card_expiry, name_on_card, cvc))
