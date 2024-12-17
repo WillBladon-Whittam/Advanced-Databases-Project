@@ -13,11 +13,11 @@ Go into the Advanced-Databases-Project directory
 
 > cd Advanced-Databases-Project
 
-Create a virtual enviroment:
+Create a virtual environment:
 
  > python -m venv .venv
 
-Activate virtual enviroment:
+Activate virtual environment:
 
  > .\\.venv\Scripts\activate
 
@@ -38,9 +38,10 @@ Install Dependencies:
  ## Database management
  
  When the steps above have been followed, the application should execute and the Login Page should be displayed.
- There is no need to configure / setup the database as the python application automatically does this.
- If the database does not exists, it is created and the .sql script creates the tables and the data. 
- The script then automatically updates the fields that store images in the database.
+ There is no need to configure / set up the database as the python application automatically does this.
+ If the database does not exist, it is created and the .sql script creates the tables and the data. 
+ The script then automatically updates the fields that store images in the database, as the images are stored in the
+ assets' directory.
  
  ## Reset database
 
@@ -55,3 +56,10 @@ Install Dependencies:
  > python advanced_database_project\main.py --reload-db
 
  This is handy for debugging when wanting to start with a fresh db per execution.
+ 
+ # Test Execution
+
+ To run all the pytest unit tests, the following command can be run:
+ 
+ > pytest -k "test_"
+ > 

@@ -396,7 +396,10 @@ class DatabaseConnection(SqlWrapper):
             None: If the SQL Query is successful
             Exception: If the SQL Query fails
         """
-        return self.update_table("""DELETE FROM Basket_Contents WHERE Basket_ID = ? """, sql_parameters=basket_id)
+        return self.update_table("""
+                                DELETE FROM Basket_Contents 
+                                WHERE Basket_ID = ?
+                                """, sql_parameters=basket_id)
 
     def update_basket_item(self, basket_id: int, product_id: int, quantity: int) -> Exception | None:
         """

@@ -197,7 +197,7 @@ class BasketPage(BasePage):
         Args:
             item (Dict[str, Any]): The product information of the item that was removed
         """
-        self.db.remove_basket_item(self.basket["Basket_ID"], item["Product_ID"])6a
+        self.db.remove_basket_item(self.basket["Basket_ID"], item["Product_ID"])
         self.basket_items = self.db.get_basket_items_by_basket_id(self.basket["Basket_ID"])
         self.total_price = self.calculate_total_price()
         self.refresh_page()

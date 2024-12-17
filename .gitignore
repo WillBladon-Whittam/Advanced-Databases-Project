@@ -2,6 +2,5 @@
 *.pyc
 __pycache__
 database.db
-database_backup.xml
 running_process.pid
 .idea/
