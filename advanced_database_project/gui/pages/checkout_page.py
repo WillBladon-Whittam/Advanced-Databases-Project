@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import messagebox
 import hashlib
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, Any, List, Tuple
 
 from advanced_database_project.gui.base_page import BasePage
@@ -33,7 +33,6 @@ class CheckoutPage(BasePage):
             "shipping_address_street_number": tk.StringVar(),
             "shipping_address_street": tk.StringVar(),
             "shipping_address_postcode": tk.StringVar(),
-            "delivery_date": tk.StringVar(),
         }
 
         self.entries = {}
@@ -72,7 +71,6 @@ class CheckoutPage(BasePage):
             ("Street Number:", "shipping_address_street_number"),
             ("Street:", "shipping_address_street"),
             ("Postcode:", "shipping_address_postcode"),
-            ("Delivery Date (DD/MM/YYYY):", "delivery_date"),
         ])
 
         # Navigation buttons
@@ -139,7 +137,7 @@ class CheckoutPage(BasePage):
         self.db.create_shipping(
             self.user["Customer_ID"], self.vars["shipping_address_street_number"].get(),
             self.vars["shipping_address_street"].get(), self.vars["shipping_address_postcode"].get(),
-            self.vars["delivery_date"].get())
+            (datetime.now() + timedelta(3)).strftime("%d/%m/%Y"))
         shipping_id = self.db.cursor.lastrowid
 
         self.db.create_billing(
